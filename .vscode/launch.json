@@ -1,0 +1,159 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: query uap",
+            "type": "python",
+            "request": "launch",
+            "program": "reidattack/main.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--config-file",
+                "configs/query_uap.yml"
+            ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "0",
+            }
+        },
+        {
+            "name": "Python: muap",
+            "type": "python",
+            "request": "launch",
+            "program": "reidattack/main.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--config-file",
+                "configs/muap.yml"
+            ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "3",
+            }
+        },
+        {
+            "name": "Python: ditim",
+            "type": "python",
+            "request": "launch",
+            "program": "reidattack/main.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--config-file",
+                "configs/ditim.yml",
+            ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "1",
+            }
+        },
+        {
+            "name": "Python: bandits",
+            "type": "python",
+            "request": "launch",
+            "program": "reidattack/main.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--config-file",
+                "configs/bandits.yml",
+            ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "1",
+            }
+        },
+        {
+            "name": "Python: rgf",
+            "type": "python",
+            "request": "launch",
+            "program": "reidattack/main.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--config-file",
+                "configs/rgf.yml",
+            ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "1",
+            }
+        },
+        {
+            "name": "Python: bandits uap",
+            "type": "python",
+            "request": "launch",
+            "program": "reidattack/main.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--config-file",
+                "configs/bandits_uap.yml",
+            ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "3",
+            }
+        },
+        {
+            "name": "Python: rgf uap",
+            "type": "python",
+            "request": "launch",
+            "program": "reidattack/main.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--config-file",
+                "configs/rgf_uap.yml",
+            ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "3",
+            }
+        },
+        {
+            "name": "Python: no attack",
+            "type": "python",
+            "request": "launch",
+            "program": "reidattack/main.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--config-file",
+                "configs/no_attack.yml",
+            ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "1",
+            }
+        },
+        {
+            "name": "Python: attack eval",
+            "type": "python",
+            "request": "launch",
+            "program": "reidattack/main.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--config-file",
+                "configs/attack_eval.yml",
+            ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "3",
+            }
+        },
+        {
+            "name": "Python: ddp_no_attack",
+            "type": "python",
+            "request": "launch",
+            "module": "torch.distributed.run",
+            "args": [
+                "--nproc_per_node",
+                "2",
+                "reidattack/main.py",
+                "--config-file",
+                "configs/no_attack.yml"
+            ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "0,1,2,3",
+            }
+        },
+    ]
+}

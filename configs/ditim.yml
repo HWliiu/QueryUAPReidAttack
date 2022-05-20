@@ -1,0 +1,141 @@
+TRAINER:
+  EVAL_ONLY: True
+  MAX_EPOCH: 1
+  ATTACK_ALGORITHM: ditim
+DATA:
+  DATASET:
+    TEST_NAME: Market1501
+    # TEST_NAME: DukeMTMCreID
+    # TEST_NAME: MSMT17
+  DATALOADER:
+    BATCH_SIZE_TEST: 128
+  # # fot transreid
+  # TRANSFORM:
+  #   NORM:
+  #     PIXEL_MEAN: [0.5, 0.5, 0.5]
+  #     PIXEL_STD: [0.5, 0.5, 0.5]
+MODULE:
+  AGENT_MODELS:
+    NAMES:
+    # ABD:
+      # - resnet50_abd
+      # - densenet121_abd
+    # AGW:
+      # - resnet50_agw
+    # AP:
+      # - resnet50_ap
+    # DeepPersonReid:
+      # - mlfn_dpr
+      # - osnet_x1_0_dpr
+    # ReidStrongBaseline:
+      # - "convnext_tiny_bot"
+      # - "densnet121_bot"
+      # - "efficientnet_b0_bot"
+      # - "inceptionv3_bot"
+      # - "mobilenetv2_bot"
+      # - "regnet_x_1_6gf_bot"
+      - "resnet50_bot"
+      # - "resnet50_ibn_a_bot"
+      # - "se_resnet50_bot"
+      # - "se_resnext50_bot"
+      # - "senet154_bot"
+      # - "shufflenetv2_bot"
+      # - "vgg19_bot"
+    # Transreid:
+      # - vit_base
+      # - vit_transreid
+      # - deit_transreid
+    WEIGHTS:
+    # ABD:
+      # market1501
+      # - model_weights/reid_models/ABD/market1501_resnet50_abd_map=0.87.pth
+      # - model_weights/reid_models/ABD/market1501_densenet121_abd_map=0.87.pth
+      # dukemtmc
+      # - model_weights/reid_models/ABD/dukemtmc_resnet50_abd_map=0.77.pth
+      # - model_weights/reid_models/ABD/dukemtmc_densenet121_abd_map=0.77.pth
+      # msmt17
+      # - model_weights/reid_models/ABD/msmt17_resnet50_abd_map=0.58.pth
+      # - model_weights/reid_models/ABD/msmt17_densenet121_abd_map=0.59.pth
+    # AGW:
+      # market1501
+      # - model_weights/reid_models/AGW/market1501_resnet50_agw_map=0.88.pth
+      # dukemtmc
+      # - model_weights/reid_models/AGW/dukemtmc_resnet50_agw_map=0.79.pth
+      # msmt17
+      # - model_weights/reid_models/AGW/msmt17_resnet50_agw_map=0.55.pth
+    # AP:
+      # market1501
+      # - model_weights/reid_models/AP/market1501_resnet50_ap_map=0.89.pth
+      # dukemtmc
+      # - model_weights/reid_models/AP/dukemtmc_resnet50_ap_map=0.80.pth
+      # msmt17
+      # - model_weights/reid_models/AP/msmt17_resnet50_ap_map=0.57.pth
+    # DeepPersonReid:
+      # market1501
+      # - model_weights/reid_models/DeepPersonReid/market1501_mlfn_dpr_map=0.74.pth
+      # - model_weights/reid_models/DeepPersonReid/market1501_osnet_x1_0_dpr_map=0.83.pth
+      # dukemtmc
+      # - model_weights/reid_models/DeepPersonReid/dukemtmc_mlfn_dpr_map=0.64.pth
+      # - model_weights/reid_models/DeepPersonReid/dukemtmc_osnet_x1_0_dpr_map=0.72.pth
+      # msmt17
+      # - model_weights/reid_models/DeepPersonReid/msmt17_mlfn_dpr_map=0.39.pth
+      # - model_weights/reid_models/DeepPersonReid/msmt17_osnet_x1_0_dpr_map=0.48.pth
+    # ReidStrongBaseline:
+      # market1501
+      # - model_weights/reid_models/ReidStrongBaseline/convnext_tiny/market1501_convnext_tiny_bot_map=0.82.pth
+      # - model_weights/reid_models/ReidStrongBaseline/densnet121/market1501_densnet121_bot_map=0.82.pth
+      # - model_weights/reid_models/ReidStrongBaseline/efficientnet_b0/market1501_efficientnet_b0_bot_map=0.80.pth
+      # - model_weights/reid_models/ReidStrongBaseline/inceptionv3/market1501_inceptionv3_bot_map=0.77.pth
+      # - model_weights/reid_models/ReidStrongBaseline/mobilenetv2/market1501_mobilenetv2_bot_map=0.78.pth
+      # - model_weights/reid_models/ReidStrongBaseline/regnet_x_1_6gf/market1501_regnet_x_1_6gf_bot_map=0.83.pth
+      # - model_weights/reid_models/ReidStrongBaseline/resnet50/market1501_resnet50_bot_map=0.86.pth
+      # - model_weights/reid_models/ReidStrongBaseline/resnet50_ibn_a/market1501_resnet50_ibn_a_bot_map=0.87.pth
+      # - model_weights/reid_models/ReidStrongBaseline/se_resnet50/market1501_se_resnet50_bot_map=0.86.pth
+      # - model_weights/reid_models/ReidStrongBaseline/se_resnext50/market1501_se_resnext50_bot_map=0.87.pth
+      # - model_weights/reid_models/ReidStrongBaseline/senet154/market1501_senet154_bot_map=0.86.pth
+      # - model_weights/reid_models/ReidStrongBaseline/shufflenetv2/market1501_shufflenetv2_bot_map=0.75.pth
+      # - model_weights/reid_models/ReidStrongBaseline/vgg19/market1501_vgg19_bot_map=0.73.pth
+      # dukemtmc
+      # - model_weights/reid_models/ReidStrongBaseline/convnext_tiny/dukemtmc_convnext_tiny_bot_map=0.74.pth
+      # - model_weights/reid_models/ReidStrongBaseline/densnet121/dukemtmc_densnet121_bot_map=0.74.pth
+      # - model_weights/reid_models/ReidStrongBaseline/efficientnet_b0/dukemtmc_efficientnet_b0_bot_map=0.70.pth
+      # - model_weights/reid_models/ReidStrongBaseline/inceptionv3/dukemtmc_inceptionv3_bot_map=0.68.pth
+      # - model_weights/reid_models/ReidStrongBaseline/mobilenetv2/dukemtmc_mobilenetv2_bot_map=0.68.pth
+      # - model_weights/reid_models/ReidStrongBaseline/regnet_x_1_6gf/dukemtmc_regnet_x_1_6gf_bot_map=0.75.pth
+      - model_weights/reid_models/ReidStrongBaseline/resnet50/dukemtmc_resnet50_bot_map=0.76.pth
+      # - model_weights/reid_models/ReidStrongBaseline/resnet50_ibn_a/dukemtmc_resnet50_ibn_a_bot_map=0.79.pth
+      # - model_weights/reid_models/ReidStrongBaseline/se_resnet50/dukemtmc_se_resnet50_bot_map=0.77.pth
+      # - model_weights/reid_models/ReidStrongBaseline/se_resnext50/dukemtmc_se_resnext50_bot_map=0.78.pth
+      # - model_weights/reid_models/ReidStrongBaseline/senet154/dukemtmc_senet154_bot_map=0.78.pth
+      # - model_weights/reid_models/ReidStrongBaseline/shufflenetv2/dukemtmc_shufflenetv2_bot_map=0.67.pth
+      # - model_weights/reid_models/ReidStrongBaseline/vgg19/dukemtmc_vgg19_bot_map=0.62.pth
+      # msmt17
+      # - model_weights/reid_models/ReidStrongBaseline/convnext_tiny/msmt17_convnext_tiny_bot_map=0.46.pth
+      # - model_weights/reid_models/ReidStrongBaseline/densnet121/msmt17_densnet121_bot_map=0.50.pth
+      # - model_weights/reid_models/ReidStrongBaseline/efficientnet_b0/msmt17_efficientnet_b0_bot_map=0.41.pth
+      # - model_weights/reid_models/ReidStrongBaseline/inceptionv3/msmt17_inceptionv3_bot_map=0.38.pth
+      # - model_weights/reid_models/ReidStrongBaseline/mobilenetv2/msmt17_mobilenetv2_bot_map=0.40.pth
+      # - model_weights/reid_models/ReidStrongBaseline/regnet_x_1_6gf/msmt17_regnet_x_1_6gf_bot_map=0.49.pth
+      # - model_weights/reid_models/ReidStrongBaseline/resnet50/msmt17_resnet50_bot_map=0.50.pth
+      # - model_weights/reid_models/ReidStrongBaseline/resnet50_ibn_a/msmt17_resnet50_ibn_a_bot_map=0.56.pth
+      # - model_weights/reid_models/ReidStrongBaseline/se_resnet50/msmt17_se_resnet50_bot_map=0.46.pth
+      # - model_weights/reid_models/ReidStrongBaseline/se_resnext50/msmt17_se_resnext50_bot_map=0.55.pth
+      # - model_weights/reid_models/ReidStrongBaseline/senet154/msmt17_senet154_bot_map=0.58.pth
+      # - model_weights/reid_models/ReidStrongBaseline/shufflenetv2/msmt17_shufflenetv2_bot_map=0.34.pth
+      # - model_weights/reid_models/ReidStrongBaseline/vgg19/msmt17_vgg19_bot_map=0.34.pth
+    # Transreid
+      # market1501
+      # - model_weights/reid_models/TransReID/market1501_vit_base_map=0.87.pth
+      # - model_weights/reid_models/TransReID/market1501_vit_transreid_map=0.89.pth
+      # - model_weights/reid_models/TransReID/market1501_deit_transreid_map=0.88.pth
+      # dukemtmc
+      # - model_weights/reid_models/TransReID/dukemtmc_vit_base_map=0.79.pth
+      # - model_weights/reid_models/TransReID/dukemtmc_vit_transreid_map=0.82.pth
+      # - model_weights/reid_models/TransReID/dukemtmc_deit_transreid_map=0.82.pth
+      # msmt17
+      # - model_weights/reid_models/TransReID/msmt17_vit_base_map=0.62.pth
+      # - model_weights/reid_models/TransReID/msmt17_vit_transreid_map=0.68.pth
+      # - model_weights/reid_models/TransReID/msmt17_deit_transreid_map=0.66.pth
+  TARGET_MODEL:
+    NAME: resnet50_bot
+    WEIGHT: model_weights/reid_models/ReidStrongBaseline/resnet50/dukemtmc_resnet50_bot_map=0.76.pth
