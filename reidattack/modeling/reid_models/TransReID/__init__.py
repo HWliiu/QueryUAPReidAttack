@@ -2,7 +2,7 @@
 from yacs.config import CfgNode
 
 from .model import make_model
-from .. import REID_MODEL_BUILDER_REGISTRY, set_model_name
+from .. import REID_MODEL_BUILDER_REGISTRY
 
 __all__ = ['vit_base', 'vit_transreid', 'deit_transreid']
 
@@ -40,14 +40,12 @@ cfg = CfgNode.load_cfg(base_config)
 
 
 @REID_MODEL_BUILDER_REGISTRY.register()
-@set_model_name()
 def vit_base(num_classes, **kwargs):
     model = make_model(cfg, num_class=num_classes, camera_num=0, view_num=0)
     return model
 
 
 @REID_MODEL_BUILDER_REGISTRY.register()
-@set_model_name()
 def vit_transreid(num_classes, **kwargs):
     assert 'camera_num' in kwargs
     camera_num = kwargs['camera_num']
@@ -60,14 +58,6 @@ def vit_transreid(num_classes, **kwargs):
 
 
 @REID_MODEL_BUILDER_REGISTRY.register()
-@set_model_name()
 def deit_transreid(num_classes, **kwargs):
     """Structure same as vit_transreid, but with different weights"""
-    assert 'camera_num' in kwargs
-    camera_num = kwargs['camera_num']
-    cfg.MODEL.STRIDE_SIZE = [12, 12]
-    cfg.MODEL.SIE_CAMERA = True
-    cfg.MODEL.JPM = True
-    model = make_model(cfg, num_class=num_classes,
-                       camera_num=camera_num, view_num=0)
-    return model
+    return vit_transreid(num_classes, **kwargs)

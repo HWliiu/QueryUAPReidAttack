@@ -1,4 +1,4 @@
-TRAINER:
+ENGINE:
   EVAL_ONLY: true
   MAX_EPOCH: 1
   ATTACK_ALGORITHM: bandits

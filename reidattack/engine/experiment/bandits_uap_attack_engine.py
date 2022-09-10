@@ -16,12 +16,12 @@ import accelerate
 from accelerate.utils import extract_model_from_parallel
 import kornia as K
 
-from engine.base_trainer import BaseTrainer
-from . import TRAINER_REGISTRY
+from engine.base_engine import BaseEngine
+from . import ENGINE_REGISTRY
 from utils import mkdir_if_missing
 
 
-class BanditsUAPAttackTrainer(BaseTrainer):
+class BanditsUAPAttackEngine(BaseEngine):
     def __init__(
             self,
             train_dataloader: DataLoader,
@@ -32,14 +32,10 @@ class BanditsUAPAttackTrainer(BaseTrainer):
             target_model: nn.Module,
             segment_model: nn.Module,
             image_size: List[float],
-            algorithm: str = "bandits_uap",
-            use_normalized: bool = True,
-            normalize_mean: Optional[List[float]] = None,
-            normalize_std: Optional[List[float]] = None) -> None:
+            algorithm: str = "bandits_uap") -> None:
         super().__init__(
             train_dataloader, query_dataloader, gallery_dataloader,
-            accelerator, agent_models, target_model, segment_model, algorithm,
-            use_normalized, normalize_mean, normalize_std)
+            accelerator, agent_models, target_model, segment_model, algorithm)
         self.image_size = image_size
         self.uap = torch.rand(
             (1, 3, 256, 128),
@@ -122,9 +118,9 @@ class BanditsUAPAttackTrainer(BaseTrainer):
             uap = torch.clamp(self.uap, -self.epsilon, self.epsilon)
             adv_imgs = torch.clamp(imgs + uap, 0, 1)
 
-            self._make_log_dir_if_missing(imgs_path[0].split(os.sep)[-3])
 
             if batch_idx == 1 and self.accelerator.is_main_process:
+                self._make_log_dir_if_missing(imgs_path[0].split(os.sep)[-3])
                 save_image(
                     adv_imgs[: 16],
                     f'{self.log_dir}/{self.target_model.name}_adv_imgs.png',
@@ -136,14 +132,10 @@ class BanditsUAPAttackTrainer(BaseTrainer):
             imgs = adv_imgs
 
         feats = self._reid_model_forward(self.target_model, imgs, camids)
-        if self._use_fliplr:
-            imgs_fliplr = T.functional.hflip(imgs)
-            feats_fliplr = self.target_model(imgs_fliplr)
-            feats = (feats + feats_fliplr) / 2.
 
         return feats, pids, camids
 
-    def save_model(self, epoch, map, is_best=False):
+    def save_state(self, epoch, map, is_best=False):
         torch.save(
             self.uap, f'{self.log_dir}/{self.target_model.name}_uap.pth')
 
@@ -155,6 +147,6 @@ class BanditsUAPAttackTrainer(BaseTrainer):
         return feats
 
 
-@TRAINER_REGISTRY.register()
+@ENGINE_REGISTRY.register()
 def bandits_uap(**trainer_params):
-    return BanditsUAPAttackTrainer(**trainer_params)
+    return BanditsUAPAttackEngine(**trainer_params)

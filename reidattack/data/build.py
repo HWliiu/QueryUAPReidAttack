@@ -4,7 +4,6 @@ import random
 
 import torch
 from torch.utils.data import DataLoader
-from accelerate.utils import AcceleratorState
 
 from .datasets import IMAGE_DATASET_REGISTRY, VIDEO_DATASET_REGISTRY
 from .samplers import SAMPLER_REGISTRY
@@ -97,7 +96,7 @@ def build_train_dataloader(data_cfg, mode='train', **kwargs):
         sampler=sampler,
         num_workers=8,
         drop_last=False,
-        pin_memory=AcceleratorState().device == torch.device('cuda'),
+        pin_memory=True,
         **kwargs)
 
     return train_loader
@@ -139,7 +138,7 @@ def build_test_dataloader(data_cfg, **kwargs):
             num_workers=8,
             shuffle=False,
             drop_last=False,
-            pin_memory=AcceleratorState().device == torch.device('cuda'))
+            pin_memory=True)
 
     query_loader = build_test_loader(query_set)
     gallery_loader = build_test_loader(gallery_set)

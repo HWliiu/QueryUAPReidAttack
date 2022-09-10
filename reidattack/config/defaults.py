@@ -23,7 +23,7 @@ _C.DATA.TRANSFORM.SIZE_TRAIN = [256, 128]
 _C.DATA.TRANSFORM.SIZE_TEST = [256, 128]
 
 # Normalize
-_C.DATA.TRANSFORM.NORM = CN({"ENABLED": True})
+_C.DATA.TRANSFORM.NORM = CN()
 # Values to be used for image normalization
 _C.DATA.TRANSFORM.NORM.PIXEL_MEAN = [0.485, 0.456, 0.406]
 # Values to be used for image normalization
@@ -92,15 +92,15 @@ _C.MODULE.TARGET_MODEL.NAME = "inceptionv3_bot"
 _C.MODULE.TARGET_MODEL.WEIGHT = "model_weights/reid_models/ReidStrongBaseline/inceptionv3/market1501_inceptionv3_bot_map=0.77.pth"
 
 # ----------------------------------------------------------------------------- #
-# TRAINER
+# ENGINE
 # ----------------------------------------------------------------------------- #
-_C.TRAINER = CN()
-_C.TRAINER.MAX_EPOCH = 2
-_C.TRAINER.EVAL_ONLY = False
-_C.TRAINER.ATTACK_ALGORITHM = "query_uap"
-_C.TRAINER.EPSILON = 10 / 255
+_C.ENGINE = CN()
+_C.ENGINE.MAX_EPOCH = 1
+_C.ENGINE.EVAL_ONLY = False
+_C.ENGINE.ATTACK_ALGORITHM = "query_uap"
+_C.ENGINE.EPSILON = 10 / 255
 # For test
 # Whether to use reranking for testing
-_C.TRAINER.RERANKING = False
-_C.TRAINER.EVAL_PERIOD = 1
-_C.TRAINER.UAP_WEIGHT = ""
+_C.ENGINE.RERANKING = False
+_C.ENGINE.EVAL_PERIOD = 1
+_C.ENGINE.UAP_WEIGHT = ""

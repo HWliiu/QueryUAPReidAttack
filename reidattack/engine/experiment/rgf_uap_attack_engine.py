@@ -16,12 +16,12 @@ import accelerate
 from accelerate.utils import extract_model_from_parallel
 import kornia as K
 
-from engine.base_trainer import BaseTrainer
-from . import TRAINER_REGISTRY
+from engine.base_engine import BaseEngine
+from . import ENGINE_REGISTRY
 from utils import mkdir_if_missing
 
 
-class RGFUAPAttackTrainer(BaseTrainer):
+class RGFUAPAttackEngine(BaseEngine):
     def __init__(
             self,
             train_dataloader: DataLoader,
@@ -32,14 +32,10 @@ class RGFUAPAttackTrainer(BaseTrainer):
             target_model: nn.Module,
             segment_model: nn.Module,
             image_size: List[float],
-            algorithm: str = "rgf_uap",
-            use_normalized: bool = True,
-            normalize_mean: Optional[List[float]] = None,
-            normalize_std: Optional[List[float]] = None) -> None:
+            algorithm: str = "rgf_uap") -> None:
         super().__init__(
             train_dataloader, query_dataloader, gallery_dataloader,
-            accelerator, agent_models, target_model, segment_model, algorithm,
-            use_normalized, normalize_mean, normalize_std)
+            accelerator, agent_models, target_model, segment_model, algorithm)
         self.image_size = image_size
         self.uap = torch.rand(
             (1, 3, 256, 128),
@@ -120,14 +116,10 @@ class RGFUAPAttackTrainer(BaseTrainer):
             imgs = adv_imgs
 
         feats = self._reid_model_forward(self.target_model, imgs, camids)
-        if self._use_fliplr:
-            imgs_fliplr = T.functional.hflip(imgs)
-            feats_fliplr = self.target_model(imgs_fliplr)
-            feats = (feats + feats_fliplr) / 2.
 
         return feats, pids, camids
 
-    def save_model(self, epoch, map, is_best=False):
+    def save_state(self, epoch, map, is_best=False):
         torch.save(
             self.uap, f'{self.log_dir}/{self.target_model.name}_uap.pth')
 
@@ -139,6 +131,6 @@ class RGFUAPAttackTrainer(BaseTrainer):
         return feats
 
 
-@TRAINER_REGISTRY.register()
+@ENGINE_REGISTRY.register()
 def rgf_uap(**trainer_params):
-    return RGFUAPAttackTrainer(**trainer_params)
+    return RGFUAPAttackEngine(**trainer_params)

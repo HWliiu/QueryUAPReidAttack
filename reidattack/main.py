@@ -16,7 +16,7 @@ def main(args):
     cfg.merge_from_list(args.opts)
     cfg.freeze()
 
-    accelerator = accelerate.Accelerator(fp16=False)
+    accelerator = accelerate.Accelerator()
 
     logger = setup_logger(
         name='reidattack',

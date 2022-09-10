@@ -1,6 +1,8 @@
 from collections import defaultdict
 from typing import Dict, List
 
+import torch.nn as nn
+
 
 def get_missing_parameters_message(keys: List[str]) -> str:
     """
@@ -87,21 +89,13 @@ def _group_to_str(group: List[str]) -> str:
     return ".{" + ", ".join(group) + "}"
 
 
-def set_model_name(name=None):
-    """We add a `name` property to reid model for distinguish."""
+class MutiInputSequential(nn.Sequential):
+    """Only process the first input except the last module and the last module supports muti-input"""
 
-    def decorator(func):
-        """func must be a model builder function."""
-        from functools import wraps
-
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            model = func(*args, **kwargs)
-            if name is None:
-                model.name = func.__name__
+    def forward(self, input, **kwargs):
+        for i, module in enumerate(self):
+            if i != len(self) - 1:
+                input = module(input)
             else:
-                model.name = name
-            return model
-        return wrapper
-
-    return decorator
+                input = module(input, **kwargs)
+        return input

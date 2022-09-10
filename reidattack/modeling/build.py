@@ -1,25 +1,24 @@
 import logging
 from collections import OrderedDict
-from typing import List
 
 import torch
 import torch.nn as nn
-from yacs.config import CfgNode
+import kornia as K
 
 from .reid_models import REID_MODEL_BUILDER_REGISTRY
 from .segment_models import BiSeNetV2
 from .utils import (get_missing_parameters_message,
                     get_unexpected_parameters_message,
-                    get_deleted_parameters_message)
+                    get_deleted_parameters_message,
+                    MutiInputSequential)
 from utils import check_isfile, HiddenPrints
 
 
-def build_segment_model(seg_cfg: CfgNode) -> nn.Module:
+def build_segment_model(
+        model_name: str, weights_path: str,
+        mean: tuple[float], std: tuple[float]) -> nn.Module:
     logger = logging.getLogger(
         'reidattack.' + build_segment_model.__qualname__)
-
-    model_name = seg_cfg.NAME
-    weights_path = seg_cfg.WEIGHT
 
     assert isinstance(weights_path, str)
     assert len(
@@ -48,27 +47,35 @@ def build_segment_model(seg_cfg: CfgNode) -> nn.Module:
     #         get_unexpected_parameters_message(
     #             incompatible.unexpected_keys))
 
+    segment_model = nn.Sequential(
+        K.enhance.Normalize(mean, std),
+        segment_model).eval()
+    segment_model.requires_grad_(False)
+
     return segment_model
 
 
-def build_agent_models(agt_cfg: CfgNode) -> nn.Module:
+def build_agent_models(
+        model_names: list[str], model_weights: list[str],
+        mean: tuple[float], std: tuple[float]) -> nn.Module:
     models = list()
-    model_names = agt_cfg.NAMES
-    model_weights = agt_cfg.WEIGHTS
+
     for name, path in zip(model_names, model_weights):
-        models.append(_build_reid_model(name, path, is_agent=True))
+        models.append(_build_reid_model(name, path, mean, std, is_agent=True))
     return models
 
 
-def build_target_model(tgt_cfg: CfgNode, ) -> nn.Module:
-    model_name = tgt_cfg.NAME
-    weight_path = tgt_cfg.WEIGHT
-    return _build_reid_model(model_name, weight_path, is_agent=False)
+def build_target_model(
+        model_name: str, weight_path: str,
+        mean: tuple[float], std: tuple[float]) -> nn.Module:
+    return _build_reid_model(
+        model_name, weight_path, mean, std, is_agent=False)
 
 
 def _build_reid_model(
-        model_name: str = None, weights_path: str = None, num_classes: int = 1,
-        is_agent=False) -> nn.Module:
+        model_name: str, weights_path: str,
+        mean: tuple[float], std: tuple[float],
+        num_classes: int = 1, is_agent=False) -> nn.Module:
     logger = logging.getLogger(
         'reidattack.' + _build_reid_model.__qualname__)
 
@@ -128,5 +135,12 @@ def _build_reid_model(
         logger.warn(
             get_unexpected_parameters_message(incompatible.unexpected_keys)
         )
+
+    # warp model
+    reid_model = MutiInputSequential(
+        K.enhance.Normalize(mean, std),
+        reid_model).eval()
+    reid_model.requires_grad_(False)
+    setattr(reid_model, 'name', model_name)
 
     return reid_model

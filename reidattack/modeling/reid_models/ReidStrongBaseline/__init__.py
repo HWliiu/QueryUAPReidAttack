@@ -2,7 +2,7 @@
 import sys
 
 from .modeling import build_model
-from .. import REID_MODEL_BUILDER_REGISTRY, set_model_name, _set_function_name
+from .. import REID_MODEL_BUILDER_REGISTRY, _set_function_name
 
 # Bag of tricks version
 bag_of_tricks_models = [
@@ -18,7 +18,6 @@ _module = sys.modules[__name__]
 
 for model_name in __all__:
     @REID_MODEL_BUILDER_REGISTRY.register()
-    @set_model_name()
     @_set_function_name(model_name)
     def _(num_classes, *, name=model_name.replace('_bot', ''), **kwargs):
         # default `name` parameter for avoid delay binding

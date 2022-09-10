@@ -1,24 +1,19 @@
 import os
-from typing import List, Optional, Union
 
 import torch
 import torch.nn as nn
 import torchvision.transforms as T
 import torch.nn.functional as F
-from torch.utils.data import DataLoader
 from torchvision.utils import save_image
 
-import accelerate
-import kornia as K
-from einops import repeat
 
-from engine.base_trainer import BaseTrainer
-from .no_attack_evaluator import NoAttackEvaluator
-from . import TRAINER_REGISTRY
+from .evaluate_engine import EvaluateEngine
+from . import ENGINE_REGISTRY
 from utils import mkdir_if_missing
 
 
-class AttackEvaluator(NoAttackEvaluator):
+class EvaluateAttackEngine(EvaluateEngine):
+    # TODO: add config
     # For UAP
     # def val_step(self, batch, batch_idx, is_query=True):
     #     imgs, pids, camids, imgs_path, _ = batch.values()
@@ -96,6 +91,6 @@ class AttackEvaluator(NoAttackEvaluator):
         return feats, pids, camids
 
 
-@TRAINER_REGISTRY.register()
+@ENGINE_REGISTRY.register()
 def attack_eval(**trainer_params):
-    return AttackEvaluator(**trainer_params)
+    return EvaluateAttackEngine(**trainer_params)

@@ -17,8 +17,8 @@ import accelerate
 from accelerate.utils import extract_model_from_parallel
 import kornia as K
 
-from engine.base_trainer import BaseTrainer
-from . import TRAINER_REGISTRY
+from engine.base_engine import BaseEngine
+from . import ENGINE_REGISTRY
 from utils import mkdir_if_missing
 
 # Code same as https://github.com/wenjie710/MUAP
@@ -180,7 +180,7 @@ def attack_update(
     return att_img, sat, g
 
 
-class MUAPAttackTrainer(BaseTrainer):
+class MUAPAttackEngine(BaseEngine):
     def __init__(
             self,
             train_dataloader: DataLoader,
@@ -191,14 +191,10 @@ class MUAPAttackTrainer(BaseTrainer):
             target_model: nn.Module,
             segment_model: nn.Module,
             image_size: List[float],
-            algorithm: str = "muap",
-            use_normalized: bool = True,
-            normalize_mean: Optional[List[float]] = None,
-            normalize_std: Optional[List[float]] = None) -> None:
+            algorithm: str = "muap") -> None:
         super().__init__(
             train_dataloader, query_dataloader, gallery_dataloader,
-            accelerator, agent_models, target_model, segment_model, algorithm,
-            use_normalized, normalize_mean, normalize_std)
+            accelerator, agent_models, target_model, segment_model, algorithm)
         self.image_size = image_size
 
         torch.manual_seed(1)
@@ -267,9 +263,9 @@ class MUAPAttackTrainer(BaseTrainer):
             uap = torch.clamp(uap, -self.epsilon, self.epsilon)
             adv_imgs = torch.clamp(imgs + uap, 0, 1)
 
-            self._make_log_dir_if_missing(imgs_path[0].split(os.sep)[-3])
 
             if batch_idx == 1 and self.accelerator.is_main_process:
+                self._make_log_dir_if_missing(imgs_path[0].split(os.sep)[-3])
                 save_image(
                     adv_imgs[: 16],
                     f'{self.log_dir}/{self.agent_models[0].name}_adv_imgs.png',
@@ -281,14 +277,10 @@ class MUAPAttackTrainer(BaseTrainer):
             imgs = adv_imgs
 
         feats = self._reid_model_forward(self.target_model, imgs, pids, camids)
-        if self._use_fliplr:
-            imgs_fliplr = T.functional.hflip(imgs)
-            feats_fliplr = self.target_model(imgs_fliplr)
-            feats = (feats + feats_fliplr) / 2.
 
         return feats, pids, camids
 
-    def save_model(self, epoch, map, is_best=False):
+    def save_state(self, epoch, map, is_best=False):
         torch.save(
             self.attack_img,
             f'{self.log_dir}/{self.agent_models[0].name}_uap.pth')
@@ -301,6 +293,6 @@ class MUAPAttackTrainer(BaseTrainer):
         return feats
 
 
-@TRAINER_REGISTRY.register()
+@ENGINE_REGISTRY.register()
 def muap(**trainer_params):
-    return MUAPAttackTrainer(**trainer_params)
+    return MUAPAttackEngine(**trainer_params)

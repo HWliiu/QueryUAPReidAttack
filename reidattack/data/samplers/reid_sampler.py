@@ -13,7 +13,7 @@ SAMPLER_REGISTRY.register(SequentialSampler)
 
 
 def synchronize_random_state():
-    from accelerate.utils import AcceleratorState
+    from accelerate.state import AcceleratorState
     # current only support NCCL
     if AcceleratorState().distributed_type == "MULTI_GPU":
         import torch.distributed as dist

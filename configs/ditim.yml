@@ -1,4 +1,4 @@
-TRAINER:
+ENGINE:
   EVAL_ONLY: True
   MAX_EPOCH: 1
   ATTACK_ALGORITHM: ditim
@@ -88,7 +88,7 @@ MODULE:
       # - model_weights/reid_models/ReidStrongBaseline/inceptionv3/market1501_inceptionv3_bot_map=0.77.pth
       # - model_weights/reid_models/ReidStrongBaseline/mobilenetv2/market1501_mobilenetv2_bot_map=0.78.pth
       # - model_weights/reid_models/ReidStrongBaseline/regnet_x_1_6gf/market1501_regnet_x_1_6gf_bot_map=0.83.pth
-      # - model_weights/reid_models/ReidStrongBaseline/resnet50/market1501_resnet50_bot_map=0.86.pth
+      - model_weights/reid_models/ReidStrongBaseline/resnet50/market1501_resnet50_bot_map=0.86.pth
       # - model_weights/reid_models/ReidStrongBaseline/resnet50_ibn_a/market1501_resnet50_ibn_a_bot_map=0.87.pth
       # - model_weights/reid_models/ReidStrongBaseline/se_resnet50/market1501_se_resnet50_bot_map=0.86.pth
       # - model_weights/reid_models/ReidStrongBaseline/se_resnext50/market1501_se_resnext50_bot_map=0.87.pth
@@ -102,7 +102,7 @@ MODULE:
       # - model_weights/reid_models/ReidStrongBaseline/inceptionv3/dukemtmc_inceptionv3_bot_map=0.68.pth
       # - model_weights/reid_models/ReidStrongBaseline/mobilenetv2/dukemtmc_mobilenetv2_bot_map=0.68.pth
       # - model_weights/reid_models/ReidStrongBaseline/regnet_x_1_6gf/dukemtmc_regnet_x_1_6gf_bot_map=0.75.pth
-      - model_weights/reid_models/ReidStrongBaseline/resnet50/dukemtmc_resnet50_bot_map=0.76.pth
+      # - model_weights/reid_models/ReidStrongBaseline/resnet50/dukemtmc_resnet50_bot_map=0.76.pth
       # - model_weights/reid_models/ReidStrongBaseline/resnet50_ibn_a/dukemtmc_resnet50_ibn_a_bot_map=0.79.pth
       # - model_weights/reid_models/ReidStrongBaseline/se_resnet50/dukemtmc_se_resnet50_bot_map=0.77.pth
       # - model_weights/reid_models/ReidStrongBaseline/se_resnext50/dukemtmc_se_resnext50_bot_map=0.78.pth
@@ -138,4 +138,4 @@ MODULE:
       # - model_weights/reid_models/TransReID/msmt17_deit_transreid_map=0.66.pth
   TARGET_MODEL:
     NAME: resnet50_bot
-    WEIGHT: model_weights/reid_models/ReidStrongBaseline/resnet50/dukemtmc_resnet50_bot_map=0.76.pth
+    WEIGHT: model_weights/reid_models/ReidStrongBaseline/resnet50/market1501_resnet50_bot_map=0.86.pth

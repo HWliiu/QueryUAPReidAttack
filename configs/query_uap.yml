@@ -15,7 +15,7 @@ DATA:
 #     NORM:
 #       PIXEL_MEAN: [0.5, 0.5, 0.5]
 #       PIXEL_STD: [0.5, 0.5, 0.5]
-TRAINER:
+ENGINE:
   MAX_EPOCH: 1
   ATTACK_ALGORITHM: query_uap
 MODULE:
@@ -44,8 +44,8 @@ MODULE:
     # WEIGHT: model_weights/reid_models/DeepPersonReid/market1501_mlfn_dpr_map=0.74.pth
     # WEIGHT: model_weights/reid_models/DeepPersonReid/dukemtmc_mlfn_dpr_map=0.64.pth
     # WEIGHT: model_weights/reid_models/DeepPersonReid/msmt17_mlfn_dpr_map=0.39.pth
-    NAME: osnet_x1_0_dpr
-    WEIGHT: model_weights/reid_models/DeepPersonReid/market1501_osnet_x1_0_dpr_map=0.83.pth
+    # NAME: osnet_x1_0_dpr
+    # WEIGHT: model_weights/reid_models/DeepPersonReid/market1501_osnet_x1_0_dpr_map=0.83.pth
     # WEIGHT: model_weights/reid_models/DeepPersonReid/dukemtmc_osnet_x1_0_dpr_map=0.72.pth
     # WEIGHT: model_weights/reid_models/DeepPersonReid/msmt17_osnet_x1_0_dpr_map=0.48.pth
   # ReidStrongBaseline:
@@ -73,8 +73,8 @@ MODULE:
     # WEIGHT: model_weights/reid_models/ReidStrongBaseline/regnet_x_1_6gf/market1501_regnet_x_1_6gf_bot_map=0.83.pth
     # WEIGHT: model_weights/reid_models/ReidStrongBaseline/regnet_x_1_6gf/dukemtmc_regnet_x_1_6gf_bot_map=0.75.pth
     # WEIGHT: model_weights/reid_models/ReidStrongBaseline/regnet_x_1_6gf/msmt17_regnet_x_1_6gf_bot_map=0.49.pth
-    # NAME: resnet50_bot
-    # WEIGHT: model_weights/reid_models/ReidStrongBaseline/resnet50/market1501_resnet50_bot_map=0.86.pth
+    NAME: resnet50_bot
+    WEIGHT: model_weights/reid_models/ReidStrongBaseline/resnet50/market1501_resnet50_bot_map=0.86.pth
     # WEIGHT: model_weights/reid_models/ReidStrongBaseline/resnet50/dukemtmc_resnet50_bot_map=0.76.pth
     # WEIGHT: model_weights/reid_models/ReidStrongBaseline/resnet50/msmt17_resnet50_bot_map=0.50.pth
     # NAME: resnet50_ibn_a_bot

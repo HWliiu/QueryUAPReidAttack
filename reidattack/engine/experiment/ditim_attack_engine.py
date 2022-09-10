@@ -12,13 +12,13 @@ import accelerate
 import kornia as K
 from einops import rearrange, reduce, repeat
 
-from engine.base_trainer import BaseTrainer
-from .no_attack_evaluator import NoAttackEvaluator
-from . import TRAINER_REGISTRY
+from engine.base_engine import BaseEngine
+from .evaluate_engine import EvaluateEngine
+from . import ENGINE_REGISTRY
 from utils import mkdir_if_missing
 
 
-class DITIMAttackTrainer(NoAttackEvaluator):
+class DITIMAttackEngine(EvaluateEngine):
     def __init__(
             self,
             train_dataloader: DataLoader,
@@ -28,14 +28,10 @@ class DITIMAttackTrainer(NoAttackEvaluator):
             agent_models: nn.Module,
             target_model: nn.Module,
             segment_model: nn.Module,
-            algorithm: str,
-            use_normalized: bool = True,
-            normalize_mean: Optional[List[float]] = None,
-            normalize_std: Optional[List[float]] = None) -> None:
+            algorithm: str) -> None:
         super().__init__(
             train_dataloader, query_dataloader, gallery_dataloader,
-            accelerator, agent_models, target_model, segment_model, algorithm,
-            use_normalized, normalize_mean, normalize_std)
+            accelerator, agent_models, target_model, segment_model, algorithm)
 
     def _input_diversity(self, input1, input2):
         img_size = input1.shape[-1]
@@ -145,11 +141,6 @@ class DITIMAttackTrainer(NoAttackEvaluator):
         # extract_features
         feats = self._reid_model_forward(self.target_model, imgs, pids, camids)
 
-        if self._use_fliplr:
-            imgs_fliplr = T.functional.hflip(imgs)
-            feats_fliplr = self.target_model(imgs_fliplr)
-            feats = (feats + feats_fliplr) / 2.
-
         return feats, pids, camids
 
     def _reid_model_forward(self, model, imgs, pids, camids):
@@ -160,6 +151,6 @@ class DITIMAttackTrainer(NoAttackEvaluator):
         return feats
 
 
-@TRAINER_REGISTRY.register()
+@ENGINE_REGISTRY.register()
 def ditim(**trainer_params):
-    return DITIMAttackTrainer(**trainer_params)
+    return DITIMAttackEngine(**trainer_params)

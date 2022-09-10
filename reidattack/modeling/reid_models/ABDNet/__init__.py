@@ -1,7 +1,7 @@
 # Project imported from https://github.com/VITA-Group/ABD-Net
 import sys
 from .models import get_names, init_model
-from .. import REID_MODEL_BUILDER_REGISTRY, set_model_name, _set_function_name
+from .. import REID_MODEL_BUILDER_REGISTRY, _set_function_name
 
 model_names = list(name + '_abd' for name in get_names())
 
@@ -11,7 +11,6 @@ _module = sys.modules[__name__]
 
 for model_name in model_names:
     @REID_MODEL_BUILDER_REGISTRY.register()
-    @set_model_name()
     @_set_function_name(model_name)
     def _(num_classes, *, name=model_name.replace('_abd', ''), **kwargs):
         # default `name` parameter for avoid delay binding

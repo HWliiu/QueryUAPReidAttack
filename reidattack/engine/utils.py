@@ -1,9 +1,7 @@
 from collections import defaultdict
-from typing import List, Tuple, Union
 
 import torch
-import torch.nn as nn
-import kornia as K
+
 
 
 class AverageMeter(object):
@@ -72,15 +70,3 @@ class MetricMeter(object):
                 '{} {:.4f} ({:.4f})'.format(name, meter.val, meter.avg)
             )
         return self.delimiter.join(output_str)
-
-
-class MutiInputSequential(nn.Sequential):
-    """Only process the first input except the last module and the last module supports muti-input"""
-
-    def forward(self, input, **kwargs):
-        for i, module in enumerate(self):
-            if i != len(self) - 1:
-                input = module(input)
-            else:
-                input = module(input, **kwargs)
-        return input

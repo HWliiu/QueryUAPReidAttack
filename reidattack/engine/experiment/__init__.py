@@ -1,15 +1,15 @@
 from utils.registry import Registry
-TRAINER_REGISTRY = Registry('TRAINERL')
-TRAINER_REGISTRY.__doc__ = """Registry for trainer"""
+ENGINE_REGISTRY = Registry('TRAINERL')
+ENGINE_REGISTRY.__doc__ = """Registry for trainer"""
 
-from .query_uap_trainer import QueryUAPAttackTrainer
-from .no_attack_evaluator import NoAttackEvaluator
-from .attack_evaluator import AttackEvaluator
-from .muap_attack_trainer import MUAPAttackTrainer
-from .muap_attack_refactor_trainer import MUAPAttackRefactorTrainer
-from .vanilla_uap_attack_trainer import VanillaUAPAttackTrainer
-from .ditim_attack_trainer import DITIMAttackTrainer
-from .bandits_attack_trainer import BanditsAttackTrainer
-from .bandits_uap_attack_trainer import BanditsUAPAttackTrainer
-from .rgf_uap_attack_trainer import RGFUAPAttackTrainer
-from .rgf_attack_trainer import RGFAttackTrainer
+from .query_uap_engine import QueryUAPAttackEngine
+from .evaluate_engine import EvaluateEngine
+from .evaluate_attack_engine import EvaluateAttackEngine
+from .muap_attack_engine import MUAPAttackEngine
+from .muap_attack_refactor_engine import MUAPAttackRefactorEngine
+from .vanilla_uap_attack_engine import VanillaUAPAttackEngine
+from .ditim_attack_engine import DITIMAttackEngine
+from .bandits_attack_engine import BanditsAttackEngine
+from .bandits_uap_attack_engine import BanditsUAPAttackEngine
+from .rgf_uap_attack_engine import RGFUAPAttackEngine
+from .rgf_attack_engine import RGFAttackEngine

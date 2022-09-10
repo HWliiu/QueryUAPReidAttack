@@ -10,15 +10,13 @@ from torchvision.utils import save_image
 
 import accelerate
 import kornia as K
-from einops import rearrange, reduce, repeat
 
-from engine.base_trainer import BaseTrainer
-from .no_attack_evaluator import NoAttackEvaluator
-from . import TRAINER_REGISTRY
+from .evaluate_engine import EvaluateEngine
+from . import ENGINE_REGISTRY
 from utils import mkdir_if_missing
 
 
-class BanditsAttackTrainer(NoAttackEvaluator):
+class BanditsAttackEngine(EvaluateEngine):
     def __init__(
             self,
             train_dataloader: DataLoader,
@@ -28,14 +26,10 @@ class BanditsAttackTrainer(NoAttackEvaluator):
             agent_models: nn.Module,
             target_model: nn.Module,
             segment_model: nn.Module,
-            algorithm: str,
-            use_normalized: bool = True,
-            normalize_mean: Optional[List[float]] = None,
-            normalize_std: Optional[List[float]] = None) -> None:
+            algorithm: str) -> None:
         super().__init__(
             train_dataloader, query_dataloader, gallery_dataloader,
-            accelerator, agent_models, target_model, segment_model, algorithm,
-            use_normalized, normalize_mean, normalize_std)
+            accelerator, agent_models, target_model, segment_model, algorithm)
 
     def bandits_attack(self, imgs, pids, camids):
         max_queries = 500
@@ -113,11 +107,6 @@ class BanditsAttackTrainer(NoAttackEvaluator):
         # extract_features
         feats = self._reid_model_forward(self.target_model, imgs, pids, camids)
 
-        if self._use_fliplr:
-            imgs_fliplr = T.functional.hflip(imgs)
-            feats_fliplr = self.target_model(imgs_fliplr)
-            feats = (feats + feats_fliplr) / 2.
-
         return feats, pids, camids
 
     def _reid_model_forward(self, model, imgs, pids, camids):
@@ -128,6 +117,6 @@ class BanditsAttackTrainer(NoAttackEvaluator):
         return feats
 
 
-@TRAINER_REGISTRY.register()
+@ENGINE_REGISTRY.register()
 def bandits(**trainer_params):
-    return BanditsAttackTrainer(**trainer_params)
+    return BanditsAttackEngine(**trainer_params)

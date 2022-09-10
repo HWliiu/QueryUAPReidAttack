@@ -23,7 +23,7 @@ def check_isfile(path):
     return isfile
 
 
-def setup_logger(name, distributed_rank=0, save_dir='logs'):
+def setup_logger(name: str, distributed_rank: int = 0, save_dir: str = None):
     logger = logging.getLogger(name)
     logger.setLevel(logging.INFO)
     logger.propagate = False
@@ -35,13 +35,14 @@ def setup_logger(name, distributed_rank=0, save_dir='logs'):
             logging.Formatter("%(levelname)s: %(message)s"))
         logger.addHandler(ch)
 
-        fh = logging.FileHandler(
-            os.path.join("logs", "log.txt"), mode='a')
-        fh.setLevel(logging.INFO)
-        fh.setFormatter(
-            logging.Formatter(
-                "%(asctime)s %(name)s %(levelname)s: %(message)s"))
-        logger.addHandler(fh)
+        if save_dir:
+            fh = logging.FileHandler(
+                os.path.join(save_dir, "log.txt"), mode='a')
+            fh.setLevel(logging.INFO)
+            fh.setFormatter(
+                logging.Formatter(
+                    "%(asctime)s %(name)s %(levelname)s: %(message)s"))
+            logger.addHandler(fh)
     else:
         logging.disable(logging.CRITICAL)
 
