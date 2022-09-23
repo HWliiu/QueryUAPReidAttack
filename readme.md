@@ -22,7 +22,7 @@ gdown\=\=4.5.1
 ### Prepare data
 Download [Market1501](http://www.ee.cuhk.edu.hk/~xgwang/CUHK_identification.html) and [DukeMTMC](https://github.com/layumi/DukeMTMC-reID_evaluation#download-dataset) put in [datasets/market1501](datasets/market1501) and [datasets/dukemtmc-reid](datasets/dukemtmc-reid) respectively.
 ### Prepare pretrained models
-Download the pretrained weights from [there](https://drive.google.com/drive/folders/1nswBzsIj-eOvI8UpilpLsBN8yhtFK7lm?usp=sharing) and put it in [model_weights](model_weights) according to the directory structure.
+Download the pretrained weights from [there](https://drive.google.com/drive/folders/1FLdKsg4i0fTGKIYe6TWkSWj0yE2KqK9E?usp=sharing) and put it in [model_weights](model_weights) according to the directory structure.
 ### Run
 run Query UAP attack: `bash scripts/query_uap_run.sh`
 
