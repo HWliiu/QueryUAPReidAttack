@@ -1,11 +1,12 @@
 # Code imported from https://github.com/KaiyangZhou/deep-person-reid/blob/master/torchreid/data/datasets/image/university1652.py
-import os
 import glob
+import os
 import os.path as osp
+
 import gdown
 
-from ..bases import ReidImageDataset
 from .. import IMAGE_DATASET_REGISTRY
+from ..bases import ReidImageDataset
 
 
 @IMAGE_DATASET_REGISTRY.register()
@@ -25,7 +26,7 @@ class University1652(ReidImageDataset):
 
         Dataset statistics:
             - buildings: 1652 (train + query).
-            - The dataset split is as follows: 
+            - The dataset split is as follows:
     | Split | #imgs | #buildings | #universities|
     | --------   | -----  | ----| ----|
     | Training | 50,218 | 701 | 33 |
@@ -48,31 +49,31 @@ class University1652(ReidImageDataset):
         transforms=['random_flip', 'random_crop']
     )
     """
-    dataset_dir = 'university1652'
-    dataset_url = 'https://drive.google.com/uc?id=1iVnP4gjw-iHXa0KerZQ1IfIO0i1jADsR'
 
-    def __init__(self, root='', **kwargs):
+    dataset_dir = "university1652"
+    dataset_url = "https://drive.google.com/uc?id=1iVnP4gjw-iHXa0KerZQ1IfIO0i1jADsR"
+
+    def __init__(self, root="", **kwargs):
         self.root = osp.abspath(osp.expanduser(root))
         self.dataset_dir = osp.join(self.root, self.dataset_dir)
         print(self.dataset_dir)
         if not os.path.isdir(self.dataset_dir):
             os.mkdir(self.dataset_dir)
-            gdown.download(
-                self.dataset_url, self.dataset_dir + 'data.zip', quiet=False
-            )
-            os.system('unzip %s' % (self.dataset_dir + 'data.zip'))
-        self.train_dir = osp.join(
-            self.dataset_dir, 'University-Release/train/'
-        )
+            gdown.download(self.dataset_url, self.dataset_dir + "data.zip", quiet=False)
+            os.system("unzip %s" % (self.dataset_dir + "data.zip"))
+        self.train_dir = osp.join(self.dataset_dir, "University-Release/train/")
         self.query_dir = osp.join(
-            self.dataset_dir, 'University-Release/test/query_drone'
+            self.dataset_dir, "University-Release/test/query_drone"
         )
         self.gallery_dir = osp.join(
-            self.dataset_dir, 'University-Release/test/gallery_satellite'
+            self.dataset_dir, "University-Release/test/gallery_satellite"
         )
 
         required_files = [
-            self.dataset_dir, self.train_dir, self.query_dir, self.gallery_dir
+            self.dataset_dir,
+            self.train_dir,
+            self.query_dir,
+            self.gallery_dir,
         ]
         self.check_before_run(required_files)
 
@@ -85,13 +86,20 @@ class University1652(ReidImageDataset):
 
     def process_dir(self, dir_path, relabel=False, train=False):
         IMG_EXTENSIONS = (
-            '.jpg', '.jpeg', '.png', '.ppm', '.bmp', '.pgm', '.tif', '.tiff',
-            '.webp'
+            ".jpg",
+            ".jpeg",
+            ".png",
+            ".ppm",
+            ".bmp",
+            ".pgm",
+            ".tif",
+            ".tiff",
+            ".webp",
         )
         if train:
-            img_paths = glob.glob(osp.join(dir_path, '*/*/*'))
+            img_paths = glob.glob(osp.join(dir_path, "*/*/*"))
         else:
-            img_paths = glob.glob(osp.join(dir_path, '*/*'))
+            img_paths = glob.glob(osp.join(dir_path, "*/*"))
         pid_container = set()
         for img_path in img_paths:
             if not img_path.lower().endswith(IMG_EXTENSIONS):

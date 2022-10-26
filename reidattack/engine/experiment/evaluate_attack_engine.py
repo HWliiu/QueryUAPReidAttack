@@ -2,14 +2,13 @@ import os
 
 import torch
 import torch.nn as nn
-import torchvision.transforms as T
 import torch.nn.functional as F
+import torchvision.transforms as T
 from torchvision.utils import save_image
-
-
-from .evaluate_engine import EvaluateEngine
-from . import ENGINE_REGISTRY
 from utils import mkdir_if_missing
+
+from . import ENGINE_REGISTRY
+from .evaluate_engine import EvaluateEngine
 
 
 class EvaluateAttackEngine(EvaluateEngine):
@@ -59,26 +58,30 @@ class EvaluateAttackEngine(EvaluateEngine):
     def val_step(self, batch, batch_idx, is_query=True):
         imgs, pids, camids, imgs_path, _ = batch.values()
 
-        adv_imgs_path = 'logs/ditim/market1501/inceptionv3_bot'
+        adv_imgs_path = "logs/ditim/market1501/inceptionv3_bot"
         if is_query:
             adv_imgs = torch.load(
-                f'{adv_imgs_path}/batch_{batch_idx}.pth',
-                map_location=self.accelerator.device)
+                f"{adv_imgs_path}/batch_{batch_idx}.pth",
+                map_location=self.accelerator.device,
+            )
 
             self._make_log_dir_if_missing(imgs_path[0].split(os.sep)[-3])
             if batch_idx == 1 and self.accelerator.is_main_process:
                 save_image(
-                    adv_imgs[: 16],
-                    f'{self.log_dir}/{self.target_model.name}_adv_imgs.png',
-                    pad_value=1)
+                    adv_imgs[:16],
+                    f"{self.log_dir}/{self.target_model.name}_adv_imgs.png",
+                    pad_value=1,
+                )
                 save_image(
-                    adv_imgs[: 16] - imgs[: 16],
-                    f'{self.log_dir}/{self.target_model.name}_delta.png',
-                    normalize=True, pad_value=1)
+                    adv_imgs[:16] - imgs[:16],
+                    f"{self.log_dir}/{self.target_model.name}_delta.png",
+                    normalize=True,
+                    pad_value=1,
+                )
             imgs = adv_imgs
 
         # extract_features
-        if 'transreid' in self.target_model.name:
+        if "transreid" in self.target_model.name:
             feats = self.target_model(imgs, cam_label=camids)
         else:
             feats = self.target_model(imgs)
@@ -86,7 +89,7 @@ class EvaluateAttackEngine(EvaluateEngine):
         if self._use_fliplr:
             imgs_fliplr = T.functional.hflip(imgs)
             feats_fliplr = self.target_model(imgs_fliplr)
-            feats = (feats + feats_fliplr) / 2.
+            feats = (feats + feats_fliplr) / 2.0
 
         return feats, pids, camids
 

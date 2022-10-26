@@ -1,6 +1,5 @@
 from yacs.config import CfgNode as CN
 
-
 # ----------------------------------------------------------------------------- ##
 # Config definition
 # ----------------------------------------------------------------------------- ##
@@ -68,10 +67,13 @@ _C.MODULE = CN()
 # -----------------------------------------------------------------------------
 _C.MODULE.AGENT_MODELS = CN()
 # Name of the agent model
-_C.MODULE.AGENT_MODELS.NAMES = ["resnet50_bot",]
+_C.MODULE.AGENT_MODELS.NAMES = [
+    "resnet50_bot",
+]
 # Agent model weight file path
 _C.MODULE.AGENT_MODELS.WEIGHTS = [
-    "model_weights/reid_models/ReidStrongBaseline/resnet50/market1501_resnet50_bot_map=0.86.pth",]
+    "model_weights/reid_models/ReidStrongBaseline/resnet50/market1501_resnet50_bot_map=0.86.pth",
+]
 
 # -----------------------------------------------------------------------------
 # SEGMENT MODEL

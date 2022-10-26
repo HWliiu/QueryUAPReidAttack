@@ -1,8 +1,8 @@
-import os
-import sys
-import logging
 import errno
+import logging
+import os
 import os.path as osp
+import sys
 
 import torch
 
@@ -31,17 +31,15 @@ def setup_logger(name: str, distributed_rank: int = 0, save_dir: str = None):
     if distributed_rank == 0 and not logger.handlers:
         ch = logging.StreamHandler(stream=sys.stdout)
         ch.setLevel(logging.INFO)
-        ch.setFormatter(
-            logging.Formatter("%(levelname)s: %(message)s"))
+        ch.setFormatter(logging.Formatter("%(levelname)s: %(message)s"))
         logger.addHandler(ch)
 
         if save_dir:
-            fh = logging.FileHandler(
-                os.path.join(save_dir, "log.txt"), mode='a')
+            fh = logging.FileHandler(os.path.join(save_dir, "log.txt"), mode="a")
             fh.setLevel(logging.INFO)
             fh.setFormatter(
-                logging.Formatter(
-                    "%(asctime)s %(name)s %(levelname)s: %(message)s"))
+                logging.Formatter("%(asctime)s %(name)s %(levelname)s: %(message)s")
+            )
             logger.addHandler(fh)
     else:
         logging.disable(logging.CRITICAL)
@@ -91,7 +89,7 @@ class HiddenPrints:
 
     def close(self):
         self.original_stdout = sys.stdout
-        sys.stdout = open(os.devnull, 'w')
+        sys.stdout = open(os.devnull, "w")
         # 这里的os.devnull实际上就是Linux系统中的“/dev/null”
         # /dev/null会使得发送到此目标的所有数据无效化，就像“被删除”一样
         # 这里使用/dev/null对sys.stdout输出流进行重定向

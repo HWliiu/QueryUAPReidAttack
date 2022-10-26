@@ -3,7 +3,6 @@ from collections import defaultdict
 import torch
 
 
-
 class AverageMeter(object):
     """Computes and stores the average and current value.
 
@@ -45,7 +44,7 @@ class MetricMeter(object):
         >>> print(str(metric))
     """
 
-    def __init__(self, delimiter='\t'):
+    def __init__(self, delimiter="\t"):
         self.meters = defaultdict(AverageMeter)
         self.delimiter = delimiter
 
@@ -54,9 +53,7 @@ class MetricMeter(object):
             return
 
         if not isinstance(input_dict, dict):
-            raise TypeError(
-                'Input to MetricMeter.update() must be a dictionary'
-            )
+            raise TypeError("Input to MetricMeter.update() must be a dictionary")
 
         for k, v in input_dict.items():
             if isinstance(v, torch.Tensor):
@@ -66,7 +63,5 @@ class MetricMeter(object):
     def __str__(self):
         output_str = []
         for name, meter in self.meters.items():
-            output_str.append(
-                '{} {:.4f} ({:.4f})'.format(name, meter.val, meter.avg)
-            )
+            output_str.append("{} {:.4f} ({:.4f})".format(name, meter.val, meter.avg))
         return self.delimiter.join(output_str)

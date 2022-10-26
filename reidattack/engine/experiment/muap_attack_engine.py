@@ -2,24 +2,23 @@ import os
 import random
 from typing import List, Optional, Union
 
+import accelerate
+import kornia as K
 import numpy as np
-from scipy import stats as st
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.utils.data import DataLoader
-from torch.autograd import Variable
 import torchvision.transforms as T
-from torchvision.utils import save_image
-from einops import rearrange, reduce, repeat
-
-import accelerate
 from accelerate.utils import extract_model_from_parallel
-import kornia as K
-
+from einops import rearrange, reduce, repeat
 from engine.base_engine import BaseEngine
-from . import ENGINE_REGISTRY
+from scipy import stats as st
+from torch.autograd import Variable
+from torch.utils.data import DataLoader
+from torchvision.utils import save_image
 from utils import mkdir_if_missing
+
+from . import ENGINE_REGISTRY
 
 # Code same as https://github.com/wenjie710/MUAP
 
@@ -35,10 +34,9 @@ class TVLoss(nn.Module):
         w_x = x.size()[3]
         count_h = (x.size()[2] - 1) * x.size()[3]
         count_w = x.size()[2] * (x.size()[3] - 1)
-        h_tv = torch.pow((x[:, :, 1:, :] - x[:, :, :h_x - 1, :]), 2).sum()
-        w_tv = torch.pow((x[:, :, :, 1:] - x[:, :, :, :w_x - 1]), 2).sum()
-        return self.TVLoss_weight * 2 * (
-            h_tv / count_h + w_tv / count_w) / batch_size
+        h_tv = torch.pow((x[:, :, 1:, :] - x[:, :, : h_x - 1, :]), 2).sum()
+        w_tv = torch.pow((x[:, :, :, 1:] - x[:, :, :, : w_x - 1]), 2).sum()
+        return self.TVLoss_weight * 2 * (h_tv / count_h + w_tv / count_w) / batch_size
 
 
 def normalize(x, axis=1):
@@ -48,7 +46,7 @@ def normalize(x, axis=1):
     Returns:
       x: pytorch Variable, same shape as input
     """
-    x = 1. * x / (torch.norm(x, 2, axis, keepdim=True).expand_as(x) + 1e-12)
+    x = 1.0 * x / (torch.norm(x, 2, axis, keepdim=True).expand_as(x) + 1e-12)
     return x
 
 
@@ -85,12 +83,12 @@ def map_loss_v3(atta_feat, feat, target, bin_num, margin=0):
     dist = dist_raw.clone()
     # bin_num = 20
     # bin_len = 2./(bin_num-1)
-    bin_len = (2. + margin) / (bin_num - 1)
+    bin_len = (2.0 + margin) / (bin_num - 1)
     is_pos = target.expand(N, N).eq(target.expand(N, N).t()).float()
     is_neg = target.expand(N, N).ne(target.expand(N, N).t()).float()
-    total_true_indicator = torch.zeros(N).to('cuda')
-    total_all_indicator = torch.zeros(N).to('cuda')
-    AP = torch.zeros(N).to('cuda')
+    total_true_indicator = torch.zeros(N).to("cuda")
+    total_all_indicator = torch.zeros(N).to("cuda")
+    AP = torch.zeros(N).to("cuda")
 
     # import pdb
     # pdb.set_trace()
@@ -104,7 +102,7 @@ def map_loss_v3(atta_feat, feat, target, bin_num, margin=0):
 
     for i in range(1, bin_num + 1):
         # bm = 1 - (i-1) * bin_len
-        bm = (i - 1) * bin_len - margin / 2.
+        bm = (i - 1) * bin_len - margin / 2.0
         indicator = (1 - torch.abs(dist - bm) / bin_len).clamp(min=0)
         true_indicator = is_pos * indicator
         all_indicator = indicator
@@ -123,7 +121,6 @@ def map_loss_v3(atta_feat, feat, target, bin_num, margin=0):
 
 
 class MapLoss(nn.Module):
-
     def __init__(self):
         super(MapLoss, self).__init__()
         # self.name = 'map'
@@ -133,29 +130,29 @@ class MapLoss(nn.Module):
         return loss
 
 
-def attack_update(
-        att_img, grad, pre_sat, g, rate=0.8, base=False, i=10, radiu=10):
+def attack_update(att_img, grad, pre_sat, g, rate=0.8, base=False, i=10, radiu=10):
 
     norm = torch.sum(torch.abs(grad).view((grad.shape[0], -1)), dim=1).view(
-        -1, 1, 1) + torch.tensor([[[1e-12]], [[1e-12]], [[1e-12]]], device=grad.device)
+        -1, 1, 1
+    ) + torch.tensor([[[1e-12]], [[1e-12]], [[1e-12]]], device=grad.device)
     # norm = torch.max(torch.abs(grad).flatten())
     x_grad = grad / norm
     if torch.isnan(x_grad).any() or torch.isnan(g).any():
         import pdb
+
         pdb.set_trace()
     g = 0.4 * g + x_grad
     att_img = att_img - 0.004 * g.sign()
     # att_img = att_img - 0.008 * g.sign()
-    radiu = radiu / 255.
+    radiu = radiu / 255.0
     att_img = torch.clamp(att_img, -radiu, radiu)
 
-    pre_sat = torch.div(torch.sum(
-        torch.eq(torch.abs(att_img),
-                 radiu),
-        dtype=torch.float32),
+    pre_sat = torch.div(
+        torch.sum(torch.eq(torch.abs(att_img), radiu), dtype=torch.float32),
         torch.tensor(
-        att_img.flatten().size(),
-        dtype=torch.float32, device=att_img.device))
+            att_img.flatten().size(), dtype=torch.float32, device=att_img.device
+        ),
+    )
 
     if not base:
         img_abs = torch.abs(att_img)
@@ -167,13 +164,12 @@ def attack_update(
             # print('median', img_median)
             att_img = torch.clamp(att_img, -radiu, radiu)
 
-    sat = torch.div(torch.sum(
-        torch.eq(torch.abs(att_img),
-                 radiu),
-        dtype=torch.float32),
+    sat = torch.div(
+        torch.sum(torch.eq(torch.abs(att_img), radiu), dtype=torch.float32),
         torch.tensor(
-        att_img.flatten().size(),
-        dtype=torch.float32, device=att_img.device))
+            att_img.flatten().size(), dtype=torch.float32, device=att_img.device
+        ),
+    )
 
     # print('presat:', pre_sat, 'sat: ', sat)
 
@@ -182,36 +178,47 @@ def attack_update(
 
 class MUAPAttackEngine(BaseEngine):
     def __init__(
-            self,
-            train_dataloader: DataLoader,
-            query_dataloader: DataLoader,
-            gallery_dataloader: DataLoader,
-            accelerator: accelerate.Accelerator,
-            agent_models: List[nn.Module],
-            target_model: nn.Module,
-            segment_model: nn.Module,
-            image_size: List[float],
-            algorithm: str = "muap") -> None:
+        self,
+        train_dataloader: DataLoader,
+        query_dataloader: DataLoader,
+        gallery_dataloader: DataLoader,
+        accelerator: accelerate.Accelerator,
+        agent_models: List[nn.Module],
+        target_model: nn.Module,
+        segment_model: nn.Module,
+        image_size: List[float],
+        algorithm: str = "muap",
+    ) -> None:
         super().__init__(
-            train_dataloader, query_dataloader, gallery_dataloader,
-            accelerator, agent_models, target_model, segment_model, algorithm)
+            train_dataloader,
+            query_dataloader,
+            gallery_dataloader,
+            accelerator,
+            agent_models,
+            target_model,
+            segment_model,
+            algorithm,
+        )
         self.image_size = image_size
 
         torch.manual_seed(1)
-        self.attack_img = torch.rand(
-            3, 256, 128, requires_grad=True, device=self.accelerator.device) * 1e-6
+        self.attack_img = (
+            torch.rand(3, 256, 128, requires_grad=True, device=self.accelerator.device)
+            * 1e-6
+        )
         self.normalize_transform = T.Normalize(
-            mean=[0, 0, 0], std=[0.229, 0.224, 0.225])
-        self.g = torch.tensor([0.], device=self.attack_img.device)
-        self.pre_sat = 1.
+            mean=[0, 0, 0], std=[0.229, 0.224, 0.225]
+        )
+        self.g = torch.tensor([0.0], device=self.attack_img.device)
+        self.pre_sat = 1.0
         self.loss_fn1 = MapLoss()
         self.loss_fn2 = TVLoss(TVLoss_weight=10)
         self.pre_loss = np.inf
 
     def _muap_training_step(self, imgs, pids, camids):
         imgs = T.functional.normalize(
-            imgs, mean=[0.485, 0.456, 0.406],
-            std=[0.229, 0.224, 0.225])
+            imgs, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+        )
         model = self.agent_models[0][1]
         loss_fn1 = self.loss_fn1
         loss_fn2 = self.loss_fn2
@@ -244,7 +251,8 @@ class MUAPAttackEngine(BaseEngine):
         model.zero_grad()
         self.attack_img.detach_()
         self.attack_img, sat, g = attack_update(
-            attack_img, attack_grad, self.pre_sat, self.g, scale_rate, base, i, radiu)
+            attack_img, attack_grad, self.pre_sat, self.g, scale_rate, base, i, radiu
+        )
         self.pre_sat = sat
 
         return total_loss
@@ -253,7 +261,7 @@ class MUAPAttackEngine(BaseEngine):
         imgs, pids, camids, imgs_path, _ = batch.values()
         loss = self._muap_training_step(imgs, pids, camids)
 
-        return {'loss': loss.detach()}
+        return {"loss": loss.detach()}
 
     def val_step(self, batch, batch_idx, is_query=True):
         imgs, pids, camids, imgs_path, _ = batch.values()
@@ -263,17 +271,19 @@ class MUAPAttackEngine(BaseEngine):
             uap = torch.clamp(uap, -self.epsilon, self.epsilon)
             adv_imgs = torch.clamp(imgs + uap, 0, 1)
 
-
             if batch_idx == 1 and self.accelerator.is_main_process:
                 self._make_log_dir_if_missing(imgs_path[0].split(os.sep)[-3])
                 save_image(
-                    adv_imgs[: 16],
-                    f'{self.log_dir}/{self.agent_models[0].name}_adv_imgs.png',
-                    pad_value=1)
+                    adv_imgs[:16],
+                    f"{self.log_dir}/{self.agent_models[0].name}_adv_imgs.png",
+                    pad_value=1,
+                )
                 save_image(
-                    adv_imgs[: 16] - imgs[: 16],
-                    f'{self.log_dir}/{self.agent_models[0].name}_delta.png',
-                    normalize=True, pad_value=1)
+                    adv_imgs[:16] - imgs[:16],
+                    f"{self.log_dir}/{self.agent_models[0].name}_delta.png",
+                    normalize=True,
+                    pad_value=1,
+                )
             imgs = adv_imgs
 
         feats = self._reid_model_forward(self.target_model, imgs, pids, camids)
@@ -282,11 +292,11 @@ class MUAPAttackEngine(BaseEngine):
 
     def save_state(self, epoch, map, is_best=False):
         torch.save(
-            self.attack_img,
-            f'{self.log_dir}/{self.agent_models[0].name}_uap.pth')
+            self.attack_img, f"{self.log_dir}/{self.agent_models[0].name}_uap.pth"
+        )
 
     def _reid_model_forward(self, model, imgs, pids, camids):
-        if 'transreid' in model.name:
+        if "transreid" in model.name:
             feats = model(imgs, cam_label=camids)
         else:
             feats = model(imgs)

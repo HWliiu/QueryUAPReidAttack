@@ -1,31 +1,31 @@
-from __future__ import absolute_import
-from __future__ import division
+from __future__ import absolute_import, division
 
-from torch import nn
-import torch.utils.model_zoo as model_zoo
+import logging
 from copy import deepcopy
+
+import torch.utils.model_zoo as model_zoo
+from torch import nn
 
 from ..components import branches
 from ..components.shallow_cam import ShallowCAM
-
-import logging
 
 logger = logging.getLogger(__name__)
 
 
 model_urls = {
-    'resnet18': 'https://download.pytorch.org/models/resnet18-5c106cde.pth',
-    'resnet34': 'https://download.pytorch.org/models/resnet34-333f7ec4.pth',
-    'resnet50': 'https://download.pytorch.org/models/resnet50-19c8e357.pth',
-    'resnet101': 'https://download.pytorch.org/models/resnet101-5d3b4d8f.pth',
-    'resnet152': 'https://download.pytorch.org/models/resnet152-b121ed2d.pth',
+    "resnet18": "https://download.pytorch.org/models/resnet18-5c106cde.pth",
+    "resnet34": "https://download.pytorch.org/models/resnet34-333f7ec4.pth",
+    "resnet50": "https://download.pytorch.org/models/resnet50-19c8e357.pth",
+    "resnet101": "https://download.pytorch.org/models/resnet101-5d3b4d8f.pth",
+    "resnet152": "https://download.pytorch.org/models/resnet152-b121ed2d.pth",
 }
 
 
 def conv3x3(in_planes, out_planes, stride=1):
     """3x3 convolution with padding"""
-    return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
-                     padding=1, bias=False)
+    return nn.Conv2d(
+        in_planes, out_planes, kernel_size=3, stride=stride, padding=1, bias=False
+    )
 
 
 class BasicBlock(nn.Module):
@@ -67,10 +67,13 @@ class Bottleneck(nn.Module):
         super(Bottleneck, self).__init__()
         self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=1, bias=False)
         self.bn1 = nn.BatchNorm2d(planes)
-        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride,
-                               padding=1, bias=False)
+        self.conv2 = nn.Conv2d(
+            planes, planes, kernel_size=3, stride=stride, padding=1, bias=False
+        )
         self.bn2 = nn.BatchNorm2d(planes)
-        self.conv3 = nn.Conv2d(planes, planes * self.expansion, kernel_size=1, bias=False)
+        self.conv3 = nn.Conv2d(
+            planes, planes * self.expansion, kernel_size=1, bias=False
+        )
         self.bn3 = nn.BatchNorm2d(planes * self.expansion)
         self.relu = nn.ReLU(inplace=False)
         self.downsample = downsample
@@ -125,8 +128,13 @@ class ResNet(nn.Module):
         downsample = None
         if stride != 1 or self.inplanes != planes * block.expansion:
             downsample = nn.Sequential(
-                nn.Conv2d(self.inplanes, planes * block.expansion,
-                          kernel_size=1, stride=stride, bias=False),
+                nn.Conv2d(
+                    self.inplanes,
+                    planes * block.expansion,
+                    kernel_size=1,
+                    stride=stride,
+                    bias=False,
+                ),
                 nn.BatchNorm2d(planes * block.expansion),
             )
 
@@ -138,6 +146,7 @@ class ResNet(nn.Module):
 
         return nn.Sequential(*layers)
 
+
 def init_pretrained_weights(model, model_url):
     """Initializes model with pretrained weights.
 
@@ -145,14 +154,17 @@ def init_pretrained_weights(model, model_url):
     """
     pretrain_dict = model_zoo.load_url(model_url)
     model_dict = model.state_dict()
-    pretrain_dict = {k: v for k, v in pretrain_dict.items() if k in model_dict and model_dict[k].size() == v.size()}
+    pretrain_dict = {
+        k: v
+        for k, v in pretrain_dict.items()
+        if k in model_dict and model_dict[k].size() == v.size()
+    }
     model_dict.update(pretrain_dict)
     model.load_state_dict(model_dict)
-    print('Initialized model with pretrained weights from {}'.format(model_url))
+    print("Initialized model with pretrained weights from {}".format(model_url))
 
 
 class ResNetCommonBranch(nn.Module):
-
     def __init__(self, owner, backbone, args):
 
         super().__init__()
@@ -162,7 +174,7 @@ class ResNetCommonBranch(nn.Module):
             backbone.bn1,
             backbone.relu,
             backbone.maxpool,
-            backbone.layer1
+            backbone.layer1,
         )
         self.shallow_cam = ShallowCAM(args, 256)
         self.backbone2 = nn.Sequential(
@@ -182,8 +194,8 @@ class ResNetCommonBranch(nn.Module):
 
         return x, intermediate
 
-class ResNetDeepBranch(nn.Module):
 
+class ResNetDeepBranch(nn.Module):
     def __init__(self, owner, backbone, args):
 
         super().__init__()
@@ -199,8 +211,8 @@ class ResNetDeepBranch(nn.Module):
     def forward(self, x):
         return self.backbone(x)
 
-class ResNetMGNLikeCommonBranch(nn.Module):
 
+class ResNetMGNLikeCommonBranch(nn.Module):
     def __init__(self, owner, backbone, args):
 
         super().__init__()
@@ -210,7 +222,7 @@ class ResNetMGNLikeCommonBranch(nn.Module):
             backbone.bn1,
             backbone.relu,
             backbone.maxpool,
-            backbone.layer1
+            backbone.layer1,
         )
         self.shallow_cam = ShallowCAM(args, 256)
         self.backbone2 = nn.Sequential(
@@ -230,15 +242,14 @@ class ResNetMGNLikeCommonBranch(nn.Module):
 
         return x, intermediate
 
-class ResNetMGNLikeDeepBranch(nn.Module):
 
+class ResNetMGNLikeDeepBranch(nn.Module):
     def __init__(self, owner, backbone, args):
 
         super().__init__()
 
         self.backbone = nn.Sequential(
-            *deepcopy(backbone.layer3[1:]),
-            deepcopy(backbone.layer4)
+            *deepcopy(backbone.layer3[1:]), deepcopy(backbone.layer4)
         )
         self.out_dim = 2048
 
@@ -251,7 +262,6 @@ class ResNetMGNLikeDeepBranch(nn.Module):
 
 
 class MultiBranchResNet(branches.MultiBranchNetwork):
-
     def _get_common_branch(self, backbone, args):
 
         return ResNetCommonBranch(self, backbone, args)
@@ -260,8 +270,8 @@ class MultiBranchResNet(branches.MultiBranchNetwork):
 
         return ResNetDeepBranch(self, backbone, args)
 
-class MultiBranchMGNLikeResNet(branches.MultiBranchNetwork):
 
+class MultiBranchMGNLikeResNet(branches.MultiBranchNetwork):
     def _get_common_branch(self, backbone, args):
 
         return ResNetMGNLikeCommonBranch(self, backbone, args)
@@ -278,7 +288,7 @@ def resnet50_backbone():
         layers=[3, 4, 6, 3],
         last_stride=1,  # Always remove down-sampling
     )
-    init_pretrained_weights(network, model_urls['resnet50'])
+    init_pretrained_weights(network, model_urls["resnet50"])
 
     return network
 
@@ -287,6 +297,7 @@ def resnet50(num_classes, args, **kw):
 
     backbone = resnet50_backbone()
     return MultiBranchResNet(backbone, args, num_classes)
+
 
 def resnet50_mgn_like(num_classes, args, **kw):
 

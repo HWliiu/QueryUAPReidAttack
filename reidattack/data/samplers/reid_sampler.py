@@ -1,10 +1,10 @@
 # Code imported from https://github.com/KaiyangZhou/deep-person-reid/blob/master/torchreid/data/sampler.py
 import copy
-import numpy as np
 import random
 from collections import defaultdict
 
-from torch.utils.data.sampler import Sampler, RandomSampler, SequentialSampler
+import numpy as np
+from torch.utils.data.sampler import RandomSampler, Sampler, SequentialSampler
 
 from . import SAMPLER_REGISTRY
 
@@ -14,9 +14,11 @@ SAMPLER_REGISTRY.register(SequentialSampler)
 
 def synchronize_random_state():
     from accelerate.state import AcceleratorState
+
     # current only support NCCL
     if AcceleratorState().distributed_type == "MULTI_GPU":
         import torch.distributed as dist
+
         random_state = random.getstate()
         numpy_state = np.random.get_state()
         object_list = [random_state, numpy_state]
@@ -40,8 +42,8 @@ class RandomIdentitySampler(Sampler):
     def __init__(self, data_source, batch_size, num_instances):
         if batch_size < num_instances:
             raise ValueError(
-                'batch_size={} must be no less '
-                'than num_instances={}'.format(batch_size, num_instances)
+                "batch_size={} must be no less "
+                "than num_instances={}".format(batch_size, num_instances)
             )
 
         self.data_source = data_source
@@ -72,9 +74,7 @@ class RandomIdentitySampler(Sampler):
         for pid in self.pids:
             idxs = copy.deepcopy(self.index_dic[pid])
             if len(idxs) < self.num_instances:
-                idxs = np.random.choice(
-                    idxs, size=self.num_instances, replace=True
-                )
+                idxs = np.random.choice(idxs, size=self.num_instances, replace=True)
             random.shuffle(idxs)
             batch_idxs = []
             for idx in idxs:

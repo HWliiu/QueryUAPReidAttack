@@ -1,10 +1,10 @@
 # Project imported from https://github.com/damo-cv/TransReID
 from yacs.config import CfgNode
 
-from .model import make_model
 from .. import REID_MODEL_BUILDER_REGISTRY
+from .model import make_model
 
-__all__ = ['vit_base', 'vit_transreid', 'deit_transreid']
+__all__ = ["vit_base", "vit_transreid", "deit_transreid"]
 
 base_config = """
 INPUT:
@@ -47,13 +47,12 @@ def vit_base(num_classes, **kwargs):
 
 @REID_MODEL_BUILDER_REGISTRY.register()
 def vit_transreid(num_classes, **kwargs):
-    assert 'camera_num' in kwargs
-    camera_num = kwargs['camera_num']
+    assert "camera_num" in kwargs
+    camera_num = kwargs["camera_num"]
     cfg.MODEL.STRIDE_SIZE = [12, 12]
     cfg.MODEL.SIE_CAMERA = True
     cfg.MODEL.JPM = True
-    model = make_model(cfg, num_class=num_classes,
-                       camera_num=camera_num, view_num=0)
+    model = make_model(cfg, num_class=num_classes, camera_num=camera_num, view_num=0)
     return model
 
 

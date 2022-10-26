@@ -1,16 +1,16 @@
 import logging
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.model_zoo as model_zoo
 
-
-__all__ = ['Inception3', 'inception_v3']
+__all__ = ["Inception3", "inception_v3"]
 
 
 model_urls = {
     # Inception v3 ported from TensorFlow
-    'inception_v3_google': 'https://download.pytorch.org/models/inception_v3_google-1a9a5a14.pth',
+    "inception_v3_google": "https://download.pytorch.org/models/inception_v3_google-1a9a5a14.pth",
 }
 
 
@@ -22,17 +22,16 @@ def inception_v3(pretrained=False, **kwargs):
         pretrained (bool): If True, returns a model pre-trained on ImageNet
     """
     if pretrained:
-        if 'transform_input' not in kwargs:
-            kwargs['transform_input'] = True
+        if "transform_input" not in kwargs:
+            kwargs["transform_input"] = True
         model = Inception3(**kwargs)
-        model.load_state_dict(model_zoo.load_url(model_urls['inception_v3_google']))
+        model.load_state_dict(model_zoo.load_url(model_urls["inception_v3_google"]))
         return model
 
     return Inception3(**kwargs)
 
 
 class Inception3(nn.Module):
-
     def __init__(self, num_classes=1000, aux_logits=True, transform_input=False):
         super(Inception3, self).__init__()
         self.aux_logits = aux_logits
@@ -60,7 +59,8 @@ class Inception3(nn.Module):
         for m in self.modules():
             if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
                 import scipy.stats as stats
-                stddev = m.stddev if hasattr(m, 'stddev') else 0.1
+
+                stddev = m.stddev if hasattr(m, "stddev") else 0.1
                 X = stats.truncnorm(-2, 2, scale=stddev)
                 values = torch.Tensor(X.rvs(m.weight.data.numel()))
                 values = values.view(m.weight.data.size())
@@ -170,22 +170,28 @@ class Inception3(nn.Module):
 
     def load_state_dict(self, state_dict, strict=True):
         model_dict = self.state_dict()
-        pretrained_dict = {k: v for k, v in state_dict.items()
-                           if k in model_dict and model_dict[k].size() == v.size()}
+        pretrained_dict = {
+            k: v
+            for k, v in state_dict.items()
+            if k in model_dict and model_dict[k].size() == v.size()
+        }
 
         if len(pretrained_dict) == len(state_dict):
-            logging.info('%s: All params loaded' % type(self).__name__)
+            logging.info("%s: All params loaded" % type(self).__name__)
         else:
-            logging.info('%s: Some params were not loaded:' % type(self).__name__)
-            not_loaded_keys = [k for k in state_dict.keys() if k not in pretrained_dict.keys()]
-            logging.info(('%s, ' * (len(not_loaded_keys) - 1) + '%s') % tuple(not_loaded_keys))
+            logging.info("%s: Some params were not loaded:" % type(self).__name__)
+            not_loaded_keys = [
+                k for k in state_dict.keys() if k not in pretrained_dict.keys()
+            ]
+            logging.info(
+                ("%s, " * (len(not_loaded_keys) - 1) + "%s") % tuple(not_loaded_keys)
+            )
 
         model_dict.update(pretrained_dict)
         super(Inception3, self).load_state_dict(model_dict)
 
 
 class InceptionA(nn.Module):
-
     def __init__(self, in_channels, pool_features):
         super(InceptionA, self).__init__()
         self.branch1x1 = BasicConv2d(in_channels, 64, kernel_size=1)
@@ -217,7 +223,6 @@ class InceptionA(nn.Module):
 
 
 class InceptionB(nn.Module):
-
     def __init__(self, in_channels):
         super(InceptionB, self).__init__()
         self.branch3x3 = BasicConv2d(in_channels, 384, kernel_size=3, stride=2)
@@ -240,7 +245,6 @@ class InceptionB(nn.Module):
 
 
 class InceptionC(nn.Module):
-
     def __init__(self, in_channels, channels_7x7):
         super(InceptionC, self).__init__()
         self.branch1x1 = BasicConv2d(in_channels, 192, kernel_size=1)
@@ -279,7 +283,6 @@ class InceptionC(nn.Module):
 
 
 class InceptionD(nn.Module):
-
     def __init__(self, in_channels):
         super(InceptionD, self).__init__()
         self.branch3x3_1 = BasicConv2d(in_channels, 192, kernel_size=1)
@@ -305,7 +308,6 @@ class InceptionD(nn.Module):
 
 
 class InceptionE(nn.Module):
-
     def __init__(self, in_channels):
         super(InceptionE, self).__init__()
         self.branch1x1 = BasicConv2d(in_channels, 320, kernel_size=1)
@@ -347,7 +349,6 @@ class InceptionE(nn.Module):
 
 
 class InceptionAux(nn.Module):
-
     def __init__(self, in_channels, num_classes):
         super(InceptionAux, self).__init__()
         self.conv0 = BasicConv2d(in_channels, 128, kernel_size=1)
@@ -372,7 +373,6 @@ class InceptionAux(nn.Module):
 
 
 class BasicConv2d(nn.Module):
-
     def __init__(self, in_channels, out_channels, **kwargs):
         super(BasicConv2d, self).__init__()
         self.conv = nn.Conv2d(in_channels, out_channels, bias=False, **kwargs)

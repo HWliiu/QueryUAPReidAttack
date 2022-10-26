@@ -16,9 +16,7 @@ def get_missing_parameters_message(keys: List[str]) -> str:
     """
     groups = _group_checkpoint_keys(keys)
     msg = "Some model parameters or buffers are not found in the checkpoint:\n"
-    msg += "\n".join(
-        "  " + k + _group_to_str(v) for k, v in groups.items()
-    )
+    msg += "\n".join("  " + k + _group_to_str(v) for k, v in groups.items())
     return msg
 
 
@@ -34,18 +32,14 @@ def get_unexpected_parameters_message(keys: List[str]) -> str:
     """
     groups = _group_checkpoint_keys(keys)
     msg = "The checkpoint state_dict contains keys that are not used by the model:\n"
-    msg += "\n".join(
-        "  " + k + _group_to_str(v) for k, v in groups.items()
-    )
+    msg += "\n".join("  " + k + _group_to_str(v) for k, v in groups.items())
     return msg
 
 
 def get_deleted_parameters_message(keys: List[str]) -> str:
     groups = _group_checkpoint_keys(keys)
     msg = "The checkpoint state_dict contains keys that are deleted:\n"
-    msg += "\n".join(
-        "  " + k + _group_to_str(v) for k, v in groups.items()
-    )
+    msg += "\n".join("  " + k + _group_to_str(v) for k, v in groups.items())
     return msg
 
 
@@ -64,7 +58,7 @@ def _group_checkpoint_keys(keys: List[str]) -> Dict[str, List[str]]:
     for key in keys:
         pos = key.rfind(".")
         if pos >= 0:
-            head, tail = key[:pos], [key[pos + 1:]]
+            head, tail = key[:pos], [key[pos + 1 :]]
         else:
             head, tail = key, []
         groups[head].extend(tail)

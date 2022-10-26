@@ -4,7 +4,7 @@ from . import densenet, resnet
 
 __model_factory = {
     **densenet.model_mapping,
-    'resnet50': resnet.resnet50,
+    "resnet50": resnet.resnet50,
 }
 
 

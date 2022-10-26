@@ -1,20 +1,22 @@
-import torch
 import warnings
+
 import numpy as np
+import torch
 import torch.nn.functional as F
+from evaluation.reranking import re_ranking
 
 from .utils import compute_distance_matrix
-from evaluation.reranking import re_ranking
 
 
 class ReidMetric:
     def __init__(
-            self,
-            max_rank: int = 20,
-            distributed_rank: int = 0,
-            metric: str = 'euclidean',
-            norm_feat: bool = True,
-            square_dist: bool = True):
+        self,
+        max_rank: int = 20,
+        distributed_rank: int = 0,
+        metric: str = "euclidean",
+        norm_feat: bool = True,
+        square_dist: bool = True,
+    ):
 
         self._max_rank = max_rank
         self._distributed_rank = distributed_rank
@@ -80,7 +82,8 @@ class ReidMetric:
                 g_feats,
                 k1=self._max_rank,
                 k2=int(0.3 * self._max_rank),
-                lambda_value=0.3)
+                lambda_value=0.3,
+            )
             # from evaluation.re_ranking.query_expansion import aqe
             # q_feats, g_feats = aqe(q_feats, g_feats)
             # distmat = compute_distance_matrix(
@@ -92,13 +95,14 @@ class ReidMetric:
                 g_feats,
                 metric=self._metric,
                 normalize=self._norm_feat,
-                square=self._square_dist)
+                square=self._square_dist,
+            )
 
         cmc, mAP = eval_func(
-            distmat, q_pids, g_pids, q_camids, g_camids,
-            max_rank=self._max_rank)
+            distmat, q_pids, g_pids, q_camids, g_camids, max_rank=self._max_rank
+        )
 
-        results = {'top1': cmc[0], 'top5': cmc[4], 'map': mAP}
+        results = {"top1": cmc[0], "top5": cmc[4], "map": mAP}
         for name, result in results.items():
             results[name] = round(result, 3)
 
@@ -107,8 +111,8 @@ class ReidMetric:
 
 def eval_func(distmat, q_pids, g_pids, q_camids, g_camids, max_rank=20):
     """Evaluation with market1501 metric
-        Key: for each query identity, its gallery images from the same camera view are discarded.
-        """
+    Key: for each query identity, its gallery images from the same camera view are discarded.
+    """
     num_q, num_g = distmat.shape
 
     if num_g < max_rank:
@@ -120,7 +124,7 @@ def eval_func(distmat, q_pids, g_pids, q_camids, g_camids, max_rank=20):
     # compute cmc curve for each query
     all_cmc = []
     all_AP = []
-    num_valid_q = 0.  # number of valid query
+    num_valid_q = 0.0  # number of valid query
     for q_idx in range(num_q):
         # get query pid and camid
         q_pid = q_pids[q_idx]
@@ -142,7 +146,7 @@ def eval_func(distmat, q_pids, g_pids, q_camids, g_camids, max_rank=20):
         cmc[cmc > 1] = 1
 
         all_cmc.append(cmc[:max_rank])
-        num_valid_q += 1.
+        num_valid_q += 1.0
 
         # compute average precision
         # reference: https://en.wikipedia.org/wiki/Evaluation_measures_(information_retrieval)#Average_precision

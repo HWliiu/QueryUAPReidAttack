@@ -1,15 +1,14 @@
 from typing import List, Optional, Union
 
+import accelerate
+import kornia as K
 import torch
 import torch.nn as nn
 import torchvision.transforms as T
+from engine.base_engine import BaseEngine
 from torch.utils.data import DataLoader
 from torchvision.utils import save_image
 
-import accelerate
-import kornia as K
-
-from engine.base_engine import BaseEngine
 from . import ENGINE_REGISTRY
 
 
@@ -18,7 +17,7 @@ class EvaluateEngine(BaseEngine):
         imgs, pids, camids, _, _ = batch.values()
 
         # extract_features
-        if 'transreid' in self.target_model.name:
+        if "transreid" in self.target_model.name:
             feats = self.target_model(imgs, cam_label=camids)
         else:
             feats = self.target_model(imgs)

@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from einops import rearrange, reduce, repeat
 
 
@@ -62,6 +61,7 @@ def euclidean_dist(x, y, square=False):
 #     final_AP = torch.sum(AP) / N
 #     return final_AP
 
+
 def map_loss(atta_q_feat, g_feat, pids, bin_num=10):
     assert atta_q_feat.shape == g_feat.shape
     assert atta_q_feat.shape[0] == pids.shape[0]
@@ -72,10 +72,9 @@ def map_loss(atta_q_feat, g_feat, pids, bin_num=10):
     dist_mat = euclidean_dist(atta_q_feat, g_feat)
 
     # Range of dist_mat values.
-    dist_mat_ptp = dist_mat.max().ceil()   # peak to peak
+    dist_mat_ptp = dist_mat.max().ceil()  # peak to peak
     bin_len = dist_mat_ptp / (bin_num - 1)
-    is_pos = (repeat(pids, 'N->M N', M=N) ==
-              repeat(pids, 'N->N M', M=N)).float()
+    is_pos = (repeat(pids, "N->M N", M=N) == repeat(pids, "N->N M", M=N)).float()
 
     device = atta_q_feat.device
     total_true_indicator = torch.zeros(bin_num, N, device=device)
@@ -85,8 +84,11 @@ def map_loss(atta_q_feat, g_feat, pids, bin_num=10):
     # bm is the center of each bin
     bm = torch.arange(bin_num, device=device) * bin_len
     # indicator is the weight of the dist_mat values
-    indicator = (1 - torch.abs(rearrange(dist_mat,
-                 'M N->1 M N') - rearrange(bm, 'B->B 1 1')) / bin_len).clamp(min=0)
+    indicator = (
+        1
+        - torch.abs(rearrange(dist_mat, "M N->1 M N") - rearrange(bm, "B->B 1 1"))
+        / bin_len
+    ).clamp(min=0)
     true_indicator = is_pos * indicator
     all_indicator = indicator
     sum_true_indicator = torch.sum(true_indicator, 1)

@@ -1,13 +1,14 @@
 # Code imported from https://github.com/KaiyangZhou/deep-person-reid/blob/master/torchreid/data/datasets/dataset.py
 import copy
-import numpy as np
 import os.path as osp
 import tarfile
 import zipfile
+
+import numpy as np
 import torch
 from torch.utils.data import Dataset
 
-from .utils import read_image, download_url, mkdir_if_missing
+from .utils import download_url, mkdir_if_missing, read_image
 
 
 class ReidDataset(Dataset):
@@ -47,7 +48,7 @@ class ReidDataset(Dataset):
         gallery,
         transform=None,
         k_tfm=1,
-        mode='train',
+        mode="train",
         combineall=False,
         verbose=False,
         **kwargs
@@ -83,16 +84,16 @@ class ReidDataset(Dataset):
         if self.combineall:
             self.combine_all()
 
-        if self.mode == 'train':
+        if self.mode == "train":
             self.data = self.train
-        elif self.mode == 'query':
+        elif self.mode == "query":
             self.data = self.query
-        elif self.mode == 'gallery':
+        elif self.mode == "gallery":
             self.data = self.gallery
         else:
             raise ValueError(
-                'Invalid mode. Got {}, but expected to be '
-                'one of [train | query | gallery]'.format(self.mode)
+                "Invalid mode. Got {}, but expected to be "
+                "one of [train | query | gallery]".format(self.mode)
             )
 
         self.num_pids = self.get_num_pids(self.data)
@@ -133,7 +134,7 @@ class ReidDataset(Dataset):
                 transform=self.transform,
                 mode=self.mode,
                 combineall=False,
-                verbose=False
+                verbose=False,
             )
         else:
             return ReidVideoDataset(
@@ -145,7 +146,7 @@ class ReidDataset(Dataset):
                 combineall=False,
                 verbose=False,
                 seq_len=self.seq_len,
-                sample_method=self.sample_method
+                sample_method=self.sample_method,
             )
 
     def __radd__(self, other):
@@ -231,7 +232,7 @@ class ReidDataset(Dataset):
         if osp.exists(dataset_dir):
             return
 
-        raise NotImplementedError('Please download dataset manually')
+        raise NotImplementedError("Please download dataset manually")
 
         # if dataset_url is None:
         #     raise RuntimeError(
@@ -288,18 +289,26 @@ class ReidDataset(Dataset):
         num_gallery_pids = self.get_num_pids(self.gallery)
         num_gallery_cams = self.get_num_cams(self.gallery)
 
-        msg = '  ----------------------------------------\n' \
-              '  subset   | # ids | # items | # cameras\n' \
-              '  ----------------------------------------\n' \
-              '  train    | {:5d} | {:7d} | {:9d}\n' \
-              '  query    | {:5d} | {:7d} | {:9d}\n' \
-              '  gallery  | {:5d} | {:7d} | {:9d}\n' \
-              '  ----------------------------------------\n' \
-              '  items: images/tracklets for image/video dataset\n'.format(
-                  num_train_pids, len(self.train), num_train_cams,
-                  num_query_pids, len(self.query), num_query_cams,
-                  num_gallery_pids, len(self.gallery), num_gallery_cams
-              )
+        msg = (
+            "  ----------------------------------------\n"
+            "  subset   | # ids | # items | # cameras\n"
+            "  ----------------------------------------\n"
+            "  train    | {:5d} | {:7d} | {:9d}\n"
+            "  query    | {:5d} | {:7d} | {:9d}\n"
+            "  gallery  | {:5d} | {:7d} | {:9d}\n"
+            "  ----------------------------------------\n"
+            "  items: images/tracklets for image/video dataset\n".format(
+                num_train_pids,
+                len(self.train),
+                num_train_cams,
+                num_query_pids,
+                len(self.query),
+                num_query_cams,
+                num_gallery_pids,
+                len(self.gallery),
+                num_gallery_cams,
+            )
+        )
 
         return msg
 
@@ -307,16 +316,17 @@ class ReidDataset(Dataset):
         num_train_pids = self.get_num_pids(self.train)
         num_train_cams = self.get_num_cams(self.train)
 
-        msg = '=> Loaded {} Train DataSet\n'\
-              '  ----------------------------------------\n' \
-              '  subset   | # ids | # items | # cameras\n' \
-              '  ----------------------------------------\n' \
-              '  train    | {:5d} | {:7d} | {:9d}\n' \
-              '  ----------------------------------------\n' \
-              '  items: images/tracklets for image/video dataset'.format(
-                  self.__class__.__name__,
-                  num_train_pids, len(self.train), num_train_cams
-              )
+        msg = (
+            "=> Loaded {} Train DataSet\n"
+            "  ----------------------------------------\n"
+            "  subset   | # ids | # items | # cameras\n"
+            "  ----------------------------------------\n"
+            "  train    | {:5d} | {:7d} | {:9d}\n"
+            "  ----------------------------------------\n"
+            "  items: images/tracklets for image/video dataset".format(
+                self.__class__.__name__, num_train_pids, len(self.train), num_train_cams
+            )
+        )
         return msg
 
     def show_test(self):
@@ -326,18 +336,24 @@ class ReidDataset(Dataset):
         num_gallery_pids = self.get_num_pids(self.gallery)
         num_gallery_cams = self.get_num_cams(self.gallery)
 
-        msg = '=> Loaded {} Test DataSet\n'\
-              '  ----------------------------------------\n' \
-              '  subset   | # ids | # items | # cameras\n' \
-              '  ----------------------------------------\n' \
-              '  query    | {:5d} | {:7d} | {:9d}\n' \
-              '  gallery  | {:5d} | {:7d} | {:9d}\n' \
-              '  ----------------------------------------\n' \
-              '  items: images/tracklets for image/video dataset'.format(
-                  self.__class__.__name__,
-                  num_query_pids, len(self.query), num_query_cams,
-                  num_gallery_pids, len(self.gallery), num_gallery_cams
-              )
+        msg = (
+            "=> Loaded {} Test DataSet\n"
+            "  ----------------------------------------\n"
+            "  subset   | # ids | # items | # cameras\n"
+            "  ----------------------------------------\n"
+            "  query    | {:5d} | {:7d} | {:9d}\n"
+            "  gallery  | {:5d} | {:7d} | {:9d}\n"
+            "  ----------------------------------------\n"
+            "  items: images/tracklets for image/video dataset".format(
+                self.__class__.__name__,
+                num_query_pids,
+                len(self.query),
+                num_query_cams,
+                num_gallery_pids,
+                len(self.gallery),
+                num_gallery_cams,
+            )
+        )
         return msg
 
     def _transform_image(self, tfm, k_tfm, img0):
@@ -376,11 +392,11 @@ class ReidImageDataset(ReidDataset):
         if self.transform is not None:
             img = self._transform_image(self.transform, self.k_tfm, img)
         item = {
-            'img': img,
-            'pid': pid,
-            'camid': camid,
-            'impath': img_path,
-            'dsetid': dsetid
+            "img": img,
+            "pid": pid,
+            "camid": camid,
+            "impath": img_path,
+            "dsetid": dsetid,
         }
         return item
 
@@ -397,37 +413,29 @@ class ReidVideoDataset(ReidDataset):
     """
 
     def __init__(
-        self,
-        train,
-        query,
-        gallery,
-        seq_len=15,
-        sample_method='evenly',
-        **kwargs
+        self, train, query, gallery, seq_len=15, sample_method="evenly", **kwargs
     ):
         super(ReidVideoDataset, self).__init__(train, query, gallery, **kwargs)
         self.seq_len = seq_len
         self.sample_method = sample_method
 
         if self.transform is None:
-            raise RuntimeError('transform must not be None')
+            raise RuntimeError("transform must not be None")
 
     def __getitem__(self, index):
         img_paths, pid, camid, dsetid = self.data[index]
         num_imgs = len(img_paths)
 
-        if self.sample_method == 'random':
+        if self.sample_method == "random":
             # Randomly samples seq_len images from a tracklet of length num_imgs,
             # if num_imgs is smaller than seq_len, then replicates images
             indices = np.arange(num_imgs)
             replace = False if num_imgs >= self.seq_len else True
-            indices = np.random.choice(
-                indices, size=self.seq_len, replace=replace
-            )
+            indices = np.random.choice(indices, size=self.seq_len, replace=replace)
             # sort indices to keep temporal order (comment it to be order-agnostic)
             indices = np.sort(indices)
 
-        elif self.sample_method == 'evenly':
+        elif self.sample_method == "evenly":
             # Evenly samples seq_len images from a tracklet
             if num_imgs >= self.seq_len:
                 num_imgs -= num_imgs % self.seq_len
@@ -438,21 +446,16 @@ class ReidVideoDataset(ReidDataset):
                 indices = np.arange(0, num_imgs)
                 num_pads = self.seq_len - num_imgs
                 indices = np.concatenate(
-                    [
-                        indices,
-                        np.ones(num_pads).astype(np.int32) * (num_imgs - 1)
-                    ]
+                    [indices, np.ones(num_pads).astype(np.int32) * (num_imgs - 1)]
                 )
             assert len(indices) == self.seq_len
 
-        elif self.sample_method == 'all':
+        elif self.sample_method == "all":
             # Samples all images in a tracklet. batch_size must be set to 1
             indices = np.arange(num_imgs)
 
         else:
-            raise ValueError(
-                'Unknown sample method: {}'.format(self.sample_method)
-            )
+            raise ValueError("Unknown sample method: {}".format(self.sample_method))
 
         imgs = []
         for index in indices:
@@ -464,6 +467,6 @@ class ReidVideoDataset(ReidDataset):
             imgs.append(img)
         imgs = torch.cat(imgs, dim=0)
 
-        item = {'img': imgs, 'pid': pid, 'camid': camid, 'dsetid': dsetid}
+        item = {"img": imgs, "pid": pid, "camid": camid, "dsetid": dsetid}
 
         return item

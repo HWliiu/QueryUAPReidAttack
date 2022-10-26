@@ -1,10 +1,11 @@
 # Code imported from https://github.com/KaiyangZhou/deep-person-reid/blob/master/torchreid/data/datasets/image/cuhk02.py
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
+
 import glob
 import os.path as osp
 
-from ..bases import ReidImageDataset
 from .. import IMAGE_DATASET_REGISTRY
+from ..bases import ReidImageDataset
 
 
 @IMAGE_DATASET_REGISTRY.register()
@@ -26,13 +27,14 @@ class CUHK02(ReidImageDataset):
 
     Note: CUHK01 and CUHK02 overlap.
     """
-    dataset_dir = 'cuhk02'
-    cam_pairs = ['P1', 'P2', 'P3', 'P4', 'P5']
-    test_cam_pair = 'P5'
 
-    def __init__(self, root='', **kwargs):
+    dataset_dir = "cuhk02"
+    cam_pairs = ["P1", "P2", "P3", "P4", "P5"]
+    test_cam_pair = "P5"
+
+    def __init__(self, root="", **kwargs):
         self.root = osp.abspath(osp.expanduser(root))
-        self.dataset_dir = osp.join(self.root, self.dataset_dir, 'Dataset')
+        self.dataset_dir = osp.join(self.root, self.dataset_dir, "Dataset")
 
         required_files = [self.dataset_dir]
         self.check_before_run(required_files)
@@ -48,50 +50,45 @@ class CUHK02(ReidImageDataset):
         for cam_pair in self.cam_pairs:
             cam_pair_dir = osp.join(self.dataset_dir, cam_pair)
 
-            cam1_dir = osp.join(cam_pair_dir, 'cam1')
-            cam2_dir = osp.join(cam_pair_dir, 'cam2')
+            cam1_dir = osp.join(cam_pair_dir, "cam1")
+            cam2_dir = osp.join(cam_pair_dir, "cam2")
 
-            impaths1 = glob.glob(osp.join(cam1_dir, '*.png'))
-            impaths2 = glob.glob(osp.join(cam2_dir, '*.png'))
+            impaths1 = glob.glob(osp.join(cam1_dir, "*.png"))
+            impaths2 = glob.glob(osp.join(cam2_dir, "*.png"))
 
             if cam_pair == self.test_cam_pair:
                 # add images to query
                 for impath in impaths1:
-                    pid = osp.basename(impath).split('_')[0]
+                    pid = osp.basename(impath).split("_")[0]
                     pid = int(pid)
                     query.append((impath, pid, camid))
                 camid += 1
 
                 # add images to gallery
                 for impath in impaths2:
-                    pid = osp.basename(impath).split('_')[0]
+                    pid = osp.basename(impath).split("_")[0]
                     pid = int(pid)
                     gallery.append((impath, pid, camid))
                 camid += 1
 
             else:
-                pids1 = [
-                    osp.basename(impath).split('_')[0] for impath in impaths1
-                ]
-                pids2 = [
-                    osp.basename(impath).split('_')[0] for impath in impaths2
-                ]
+                pids1 = [osp.basename(impath).split("_")[0] for impath in impaths1]
+                pids2 = [osp.basename(impath).split("_")[0] for impath in impaths2]
                 pids = set(pids1 + pids2)
                 pid2label = {
-                    pid: label + num_train_pids
-                    for label, pid in enumerate(pids)
+                    pid: label + num_train_pids for label, pid in enumerate(pids)
                 }
 
                 # add images to train from cam1
                 for impath in impaths1:
-                    pid = osp.basename(impath).split('_')[0]
+                    pid = osp.basename(impath).split("_")[0]
                     pid = pid2label[pid]
                     train.append((impath, pid, camid))
                 camid += 1
 
                 # add images to train from cam2
                 for impath in impaths2:
-                    pid = osp.basename(impath).split('_')[0]
+                    pid = osp.basename(impath).split("_")[0]
                     pid = pid2label[pid]
                     train.append((impath, pid, camid))
                 camid += 1

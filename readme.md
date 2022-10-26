@@ -24,12 +24,12 @@ Download [Market1501](http://www.ee.cuhk.edu.hk/~xgwang/CUHK_identification.html
 ### Prepare pretrained models
 Download the pretrained weights from [there](https://drive.google.com/drive/folders/1FLdKsg4i0fTGKIYe6TWkSWj0yE2KqK9E?usp=sharing) and put it in [model_weights](model_weights) according to the directory structure.
 ### Run
-run Query UAP attack: `bash scripts/query_uap_run.sh`
+run Query UAP attack: `. ./scripts/query_uap_run.sh`
 
-run DITIM attack: `bash scripts/ditim_run.sh`
+run DITIM attack: `. ./scripts/ditim_run.sh`
 
-run MUAP attack: `bash scripts/muap_run.sh`
+run MUAP attack: `. ./scripts/muap_run.sh`
 
-run Bandits attack: `scripts/bandits_run.sh`
+run Bandits attack: `. ./scripts/bandits_run.sh`
 
-run Bandits UAP attack: `scripts/bandits_uap_run.sh`  
+run Bandits UAP attack: `. ./scripts/bandits_uap_run.sh`  

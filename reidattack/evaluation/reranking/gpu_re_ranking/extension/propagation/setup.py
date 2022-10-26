@@ -16,21 +16,22 @@
     with limited time cost.
 """
 
-from setuptools import Extension, setup
 import torch
 import torch.nn as nn
+from setuptools import Extension, setup
 from torch.autograd import Function
-from torch.utils.cpp_extension import CUDAExtension, BuildExtension
+from torch.utils.cpp_extension import BuildExtension, CUDAExtension
 
 setup(
-    name='gnn_propagate',
+    name="gnn_propagate",
     ext_modules=[
         CUDAExtension(
-            'gnn_propagate', [
-                'gnn_propagate.cpp',
-                'gnn_propagate_kernel.cu',
-            ]
+            "gnn_propagate",
+            [
+                "gnn_propagate.cpp",
+                "gnn_propagate_kernel.cu",
+            ],
         ),
     ],
-    cmdclass={'build_ext': BuildExtension}
+    cmdclass={"build_ext": BuildExtension},
 )

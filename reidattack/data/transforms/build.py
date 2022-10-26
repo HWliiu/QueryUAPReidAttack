@@ -15,11 +15,12 @@ def build_transforms(tfm_cfg, is_train=True):
             res.append(
                 T.Resize(
                     size_train[0] if len(size_train) == 1 else size_train,
-                    interpolation=T.InterpolationMode.BILINEAR))
+                    interpolation=T.InterpolationMode.BILINEAR,
+                )
+            )
 
         res.append(T.ToTensor())
 
-        # !normalize need realized in train phase
         # if do_norm:
         #     res.append(
         #         T.Normalize(mean=norm_pixel_mean, std=norm_pixel_std))
@@ -29,11 +30,12 @@ def build_transforms(tfm_cfg, is_train=True):
             res.append(
                 T.Resize(
                     size_test[0] if len(size_test) == 1 else size_test,
-                    interpolation=T.InterpolationMode.BILINEAR))
+                    interpolation=T.InterpolationMode.BILINEAR,
+                )
+            )
 
         res.append(T.ToTensor())
 
-        # # !normalize need realized in val phase
         # if do_norm:
         #     res.append(
         #         T.Normalize(mean=norm_pixel_mean, std=norm_pixel_std))

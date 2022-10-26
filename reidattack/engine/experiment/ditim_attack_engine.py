@@ -1,37 +1,44 @@
 import os
 from typing import List, Optional, Union
 
+import accelerate
+import kornia as K
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.transforms as T
+from einops import rearrange, reduce, repeat
+from engine.base_engine import BaseEngine
 from torch.utils.data import DataLoader
 from torchvision.utils import save_image
-
-import accelerate
-import kornia as K
-from einops import rearrange, reduce, repeat
-
-from engine.base_engine import BaseEngine
-from .evaluate_engine import EvaluateEngine
-from . import ENGINE_REGISTRY
 from utils import mkdir_if_missing
+
+from . import ENGINE_REGISTRY
+from .evaluate_engine import EvaluateEngine
 
 
 class DITIMAttackEngine(EvaluateEngine):
     def __init__(
-            self,
-            train_dataloader: DataLoader,
-            query_dataloader: DataLoader,
-            gallery_dataloader: DataLoader,
-            accelerator: accelerate.Accelerator,
-            agent_models: nn.Module,
-            target_model: nn.Module,
-            segment_model: nn.Module,
-            algorithm: str) -> None:
+        self,
+        train_dataloader: DataLoader,
+        query_dataloader: DataLoader,
+        gallery_dataloader: DataLoader,
+        accelerator: accelerate.Accelerator,
+        agent_models: nn.Module,
+        target_model: nn.Module,
+        segment_model: nn.Module,
+        algorithm: str,
+    ) -> None:
         super().__init__(
-            train_dataloader, query_dataloader, gallery_dataloader,
-            accelerator, agent_models, target_model, segment_model, algorithm)
+            train_dataloader,
+            query_dataloader,
+            gallery_dataloader,
+            accelerator,
+            agent_models,
+            target_model,
+            segment_model,
+            algorithm,
+        )
 
     def _input_diversity(self, input1, input2):
         img_size = input1.shape[-1]
@@ -42,74 +49,65 @@ class DITIMAttackEngine(EvaluateEngine):
             img_size = img_resize
             img_resize = input1.shape[-1]
 
-        rnd = torch.randint(low=img_size, high=img_resize,
-                            size=(1,), dtype=torch.int32)
+        rnd = torch.randint(low=img_size, high=img_resize, size=(1,), dtype=torch.int32)
         ratio = input1.shape[-2] // input1.shape[-1]
-        rescaled1 = F.interpolate(input1, size=[rnd * ratio, rnd],
-                                  mode='bilinear', align_corners=False)
-        rescaled2 = F.interpolate(input2, size=[rnd * ratio, rnd],
-                                  mode='bilinear', align_corners=False)
+        rescaled1 = F.interpolate(
+            input1, size=[rnd * ratio, rnd], mode="bilinear", align_corners=False
+        )
+        rescaled2 = F.interpolate(
+            input2, size=[rnd * ratio, rnd], mode="bilinear", align_corners=False
+        )
         h_rem = (img_resize - rnd) * ratio
         w_rem = img_resize - rnd
-        pad_top = torch.randint(
-            low=0, high=h_rem.item(),
-            size=(1,),
-            dtype=torch.int32)
+        pad_top = torch.randint(low=0, high=h_rem.item(), size=(1,), dtype=torch.int32)
         pad_bottom = h_rem - pad_top
-        pad_left = torch.randint(
-            low=0, high=w_rem.item(),
-            size=(1,),
-            dtype=torch.int32)
+        pad_left = torch.randint(low=0, high=w_rem.item(), size=(1,), dtype=torch.int32)
         pad_right = w_rem - pad_left
 
         padded1 = F.pad(
             rescaled1,
-            [pad_left.item(),
-             pad_right.item(),
-             pad_top.item(),
-             pad_bottom.item()],
-            value=0)
+            [pad_left.item(), pad_right.item(), pad_top.item(), pad_bottom.item()],
+            value=0,
+        )
         padded2 = F.pad(
             rescaled2,
-            [pad_left.item(),
-             pad_right.item(),
-             pad_top.item(),
-             pad_bottom.item()],
-            value=0)
+            [pad_left.item(), pad_right.item(), pad_top.item(), pad_bottom.item()],
+            value=0,
+        )
         diversity_prob = 0.7
-        return (padded1, padded2) if torch.rand(1) < diversity_prob else (input1, input2)
+        return (
+            (padded1, padded2) if torch.rand(1) < diversity_prob else (input1, input2)
+        )
 
     @torch.enable_grad()
     def di_tim(self, imgs, pids, camids):
         agent_model = self.agent_models[0]
 
         adv_imgs = imgs.clone()
-        momentum = 0.
-        decay = 1.
+        momentum = 0.0
+        decay = 1.0
         step_size = 1.6 / 255
         for _ in range(10):
             adv_imgs.requires_grad_(True)
-            imgs_pad, adv_imgs_pad = self._input_diversity(
-                imgs, adv_imgs)
-            feats = self._reid_model_forward(
-                agent_model, imgs_pad, pids, camids)
+            imgs_pad, adv_imgs_pad = self._input_diversity(imgs, adv_imgs)
+            feats = self._reid_model_forward(agent_model, imgs_pad, pids, camids)
 
             adv_feats = self._reid_model_forward(
-                agent_model, adv_imgs_pad, pids, camids)
-            loss = (F.normalize(adv_feats)
-                    * F.normalize(feats)).sum(dim=1).mean()
+                agent_model, adv_imgs_pad, pids, camids
+            )
+            loss = (F.normalize(adv_feats) * F.normalize(feats)).sum(dim=1).mean()
             grad = torch.autograd.grad(loss, adv_imgs)[0]
 
             grad = K.filters.gaussian_blur2d(grad, (7, 7), (3, 3))
 
             grad = momentum * decay + grad / torch.mean(
-                torch.abs(grad), dim=(1, 2, 3), keepdim=True)
+                torch.abs(grad), dim=(1, 2, 3), keepdim=True
+            )
             momentum = grad
 
             adv_imgs.detach_()
             adv_imgs -= step_size * grad.sign()
-            delta = torch.clamp(
-                adv_imgs - imgs, min=-self.epsilon, max=self.epsilon)
+            delta = torch.clamp(adv_imgs - imgs, min=-self.epsilon, max=self.epsilon)
             adv_imgs = torch.clamp(imgs + delta, min=0, max=1)
         return adv_imgs
 
@@ -120,23 +118,25 @@ class DITIMAttackEngine(EvaluateEngine):
             adv_imgs = self.di_tim(imgs, pids, camids)
 
             self._make_log_dir_if_missing(imgs_path[0].split(os.sep)[-3])
-            cache_path = os.path.join(
-                self.log_dir, f'{self.agent_models[0].name}')
+            cache_path = os.path.join(self.log_dir, f"{self.agent_models[0].name}")
             mkdir_if_missing(cache_path)
 
             if batch_idx == 1 and self.accelerator.is_main_process:
                 save_image(
-                    adv_imgs[: 16],
-                    f'{self.log_dir}/{self.agent_models[0].name}_adv_imgs.png',
-                    pad_value=1)
+                    adv_imgs[:16],
+                    f"{self.log_dir}/{self.agent_models[0].name}_adv_imgs.png",
+                    pad_value=1,
+                )
                 save_image(
-                    adv_imgs[: 16] - imgs[: 16],
-                    f'{self.log_dir}/{self.agent_models[0].name}_delta.png',
-                    normalize=True, pad_value=1)
+                    adv_imgs[:16] - imgs[:16],
+                    f"{self.log_dir}/{self.agent_models[0].name}_delta.png",
+                    normalize=True,
+                    pad_value=1,
+                )
             imgs = adv_imgs
 
             # cache adv_imgs
-            torch.save(adv_imgs, f'{cache_path}/batch_{batch_idx}.pth')
+            torch.save(adv_imgs, f"{cache_path}/batch_{batch_idx}.pth")
 
         # extract_features
         feats = self._reid_model_forward(self.target_model, imgs, pids, camids)
@@ -144,7 +144,7 @@ class DITIMAttackEngine(EvaluateEngine):
         return feats, pids, camids
 
     def _reid_model_forward(self, model, imgs, pids, camids):
-        if 'transreid' in model.name:
+        if "transreid" in model.name:
             feats = model(imgs, cam_label=camids)
         else:
             feats = model(imgs)

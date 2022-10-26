@@ -16,11 +16,10 @@
     with limited time cost.
 """
 
+import build_adjacency_matrix
+import gnn_propagate
 import numpy as np
 import torch
-
-import gnn_propagate
-import build_adjacency_matrix
 from utils import *
 
 
@@ -32,9 +31,7 @@ def gnn_reranking(X_q, X_g, k1, k2):
     del X_u, X_q, X_g
 
     # initial ranking list
-    S, initial_rank = original_score.topk(
-        k=k1, dim=-1, largest=True, sorted=True
-    )
+    S, initial_rank = original_score.topk(k=k1, dim=-1, largest=True, sorted=True)
 
     # stage 1
     A = build_adjacency_matrix.forward(initial_rank.float())
@@ -45,13 +42,21 @@ def gnn_reranking(X_q, X_g, k1, k2):
         for i in range(2):
             A = A + A.T
             A = gnn_propagate.forward(
-                A, initial_rank[:, :k2].contiguous().float(),
-                S[:, :k2].contiguous().float()
+                A,
+                initial_rank[:, :k2].contiguous().float(),
+                S[:, :k2].contiguous().float(),
             )
             A_norm = torch.norm(A, p=2, dim=1, keepdim=True)
             A = A.div(A_norm.expand_as(A))
 
-    cosine_similarity = torch.mm(A[:query_num, ], A[query_num:, ].t())
+    cosine_similarity = torch.mm(
+        A[
+            :query_num,
+        ],
+        A[
+            query_num:,
+        ].t(),
+    )
     del A, S
 
     L = torch.sort(-cosine_similarity, dim=1)[1]

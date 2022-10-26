@@ -4,7 +4,8 @@ from torch.nn import functional as F
 
 
 def compute_distance_matrix(
-        input1, input2, metric='euclidean', normalize=True, square=True):
+    input1, input2, metric="euclidean", normalize=True, square=True
+):
     """A wrapper function for computing distance matrix.
 
     Args:
@@ -26,21 +27,17 @@ def compute_distance_matrix(
     # check input
     assert isinstance(input1, torch.Tensor)
     assert isinstance(input2, torch.Tensor)
-    assert input1.dim() == 2, 'Expected 2-D tensor, but got {}-D'.format(
-        input1.dim()
-    )
-    assert input2.dim() == 2, 'Expected 2-D tensor, but got {}-D'.format(
-        input2.dim()
-    )
+    assert input1.dim() == 2, "Expected 2-D tensor, but got {}-D".format(input1.dim())
+    assert input2.dim() == 2, "Expected 2-D tensor, but got {}-D".format(input2.dim())
     assert input1.size(1) == input2.size(1)
 
-    if metric == 'euclidean':
+    if metric == "euclidean":
         distmat = euclidean_distance(input1, input2, normalize, square)
-    elif metric == 'cosine':
+    elif metric == "cosine":
         distmat = cosine_distance(input1, input2)
     else:
         raise ValueError(
-            'Unknown distance metric: {}. '
+            "Unknown distance metric: {}. "
             'Please choose either "euclidean" or "cosine"'.format(metric)
         )
 
@@ -62,7 +59,7 @@ def euclidean_distance(input1, input2, normalize=True, square=True):
         input1 = F.normalize(input1, dim=1, p=2)
         input2 = F.normalize(input2, dim=1, p=2)
         # if normalized compute distmat can be optimized
-        distmat = torch.full((m, n), 2., device=input1.device)
+        distmat = torch.full((m, n), 2.0, device=input1.device)
     else:
         mat1 = torch.pow(input1, 2).sum(dim=1, keepdim=True).expand(m, n)
         mat2 = torch.pow(input2, 2).sum(dim=1, keepdim=True).expand(n, m).t()

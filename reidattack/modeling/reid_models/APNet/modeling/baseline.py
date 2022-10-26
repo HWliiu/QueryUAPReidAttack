@@ -1,14 +1,15 @@
+import pdb
+import sys
 
 import torch
-from torch import nn
 import torch.nn.functional as F
-import sys
-import pdb
+from torch import nn
 
-from .backbones.se_module import SELayer
 from .backbones.inception import BasicConv2d
-from .backbones.resnet import ResNet
 from .backbones.resnest import resnest50
+from .backbones.resnet import ResNet
+from .backbones.se_module import SELayer
+
 # sys.path.append('.')
 
 
@@ -17,14 +18,14 @@ EPSILON = 1e-12
 
 def weights_init_kaiming(m):
     classname = m.__class__.__name__
-    if classname.find('Linear') != -1:
-        nn.init.kaiming_normal_(m.weight, a=0, mode='fan_out')
+    if classname.find("Linear") != -1:
+        nn.init.kaiming_normal_(m.weight, a=0, mode="fan_out")
         nn.init.constant_(m.bias, 0.0)
-    elif classname.find('Conv') != -1:
-        nn.init.kaiming_normal_(m.weight, a=0, mode='fan_in')
+    elif classname.find("Conv") != -1:
+        nn.init.kaiming_normal_(m.weight, a=0, mode="fan_in")
         if m.bias is not None:
             nn.init.constant_(m.bias, 0.0)
-    elif classname.find('BatchNorm') != -1:
+    elif classname.find("BatchNorm") != -1:
         if m.affine:
             nn.init.constant_(m.weight, 1.0)
             nn.init.constant_(m.bias, 0.0)
@@ -32,7 +33,7 @@ def weights_init_kaiming(m):
 
 def weights_init_classifier(m):
     classname = m.__class__.__name__
-    if classname.find('Linear') != -1:
+    if classname.find("Linear") != -1:
         nn.init.normal_(m.weight, std=0.001)
         if m.bias:
             nn.init.constant_(m.bias, 0.0)
@@ -45,23 +46,28 @@ class SAMS(nn.Module):
     multiple parts, obtain the attention map of each part, and the attention map
     for the current pyramid level is constructed by mergiing each attention map.
     """
-    def __init__(self, in_channels, channels,
-                 radix=4, reduction_factor=4,
-                norm_layer=nn.BatchNorm2d):
+
+    def __init__(
+        self,
+        in_channels,
+        channels,
+        radix=4,
+        reduction_factor=4,
+        norm_layer=nn.BatchNorm2d,
+    ):
         super(SAMS, self).__init__()
-        inter_channels = max(in_channels*radix//reduction_factor, 32)
+        inter_channels = max(in_channels * radix // reduction_factor, 32)
         self.radix = radix
         self.channels = channels
         self.relu = nn.ReLU(inplace=True)
         self.fc1 = nn.Conv2d(channels, inter_channels, 1, groups=1)
         self.bn1 = norm_layer(inter_channels)
-        self.fc2 = nn.Conv2d(inter_channels, channels*radix, 1, groups=1)
-
+        self.fc2 = nn.Conv2d(inter_channels, channels * radix, 1, groups=1)
 
     def forward(self, x):
 
         batch, channel = x.shape[:2]
-        splited = torch.split(x, channel//self.radix, dim=1)
+        splited = torch.split(x, channel // self.radix, dim=1)
 
         gap = sum(splited)
         gap = F.adaptive_avg_pool2d(gap, 1)
@@ -71,9 +77,9 @@ class SAMS(nn.Module):
 
         atten = self.fc2(gap).view((batch, self.radix, self.channels))
         atten = F.softmax(atten, dim=1).view(batch, -1, 1, 1)
-        atten = torch.split(atten, channel//self.radix, dim=1)
+        atten = torch.split(atten, channel // self.radix, dim=1)
 
-        out= torch.cat([att*split for (att, split) in zip(atten, splited)],1)
+        out = torch.cat([att * split for (att, split) in zip(atten, splited)], 1)
         return out.contiguous()
 
 
@@ -85,14 +91,15 @@ class SELayer(nn.Module):
             nn.Linear(channel, channel // reduction, bias=False),
             nn.ReLU(inplace=True),
             nn.Linear(channel // reduction, channel, bias=False),
-            nn.Sigmoid()
+            nn.Sigmoid(),
         )
 
     def forward(self, x):
         b, c, _, _ = x.size()
         y = self.avg_pool(x).view(b, c)
         y = self.fc(y).view(b, c, 1, 1)
-        return  y
+        return y
+
 
 class BN2d(nn.Module):
     def __init__(self, planes):
@@ -108,13 +115,12 @@ class BN2d(nn.Module):
 class Baseline(nn.Module):
     in_planes = 2048
 
-    def __init__(self, num_classes, last_stride, model_path,level,msmt):
+    def __init__(self, num_classes, last_stride, model_path, level, msmt):
         super(Baseline, self).__init__()
         print(f"Training with pyramid level {level}")
         self.level = level
         self.is_msmt = msmt
-        self.base = ResNet(last_stride= last_stride)
-        
+        self.base = ResNet(last_stride=last_stride)
 
         # self.base.load_param(model_path)
         self.base_1 = nn.Sequential(*list(self.base.children())[0:3])
@@ -123,19 +129,18 @@ class Baseline(nn.Module):
         self.base_4 = nn.Sequential(*list(self.base.children())[5:6])
         self.base_5 = nn.Sequential(*list(self.base.children())[6:])
 
-
         if self.level > 0:
-            self.att1 = SELayer(64,8)
-            self.att2 = SELayer(256,32)
-            self.att3 = SELayer(512,64)
-            self.att4 = SELayer(1024,128)
-            self.att5 = SELayer(2048,256)
-            if self.level > 1: # second pyramid level
-                self.att_s1=SAMS(64,int(64/self.level),radix=self.level)
-                self.att_s2=SAMS(256,int(256/self.level),radix=self.level)
-                self.att_s3=SAMS(512,int(512/self.level),radix=self.level)
-                self.att_s4=SAMS(1024,int(1024/self.level),radix=self.level)
-                self.att_s5=SAMS(2048,int(2048/self.level),radix=self.level)
+            self.att1 = SELayer(64, 8)
+            self.att2 = SELayer(256, 32)
+            self.att3 = SELayer(512, 64)
+            self.att4 = SELayer(1024, 128)
+            self.att5 = SELayer(2048, 256)
+            if self.level > 1:  # second pyramid level
+                self.att_s1 = SAMS(64, int(64 / self.level), radix=self.level)
+                self.att_s2 = SAMS(256, int(256 / self.level), radix=self.level)
+                self.att_s3 = SAMS(512, int(512 / self.level), radix=self.level)
+                self.att_s4 = SAMS(1024, int(1024 / self.level), radix=self.level)
+                self.att_s5 = SAMS(2048, int(2048 / self.level), radix=self.level)
                 self.BN1 = BN2d(64)
                 self.BN2 = BN2d(256)
                 self.BN3 = BN2d(512)
@@ -143,18 +148,20 @@ class Baseline(nn.Module):
                 self.BN5 = BN2d(2048)
 
                 if self.level > 2:
-                    self.att_ss1=SAMS(64,int(64/self.level),radix=self.level)
-                    self.att_ss2=SAMS(256,int(256/self.level),radix=self.level)
-                    self.att_ss3=SAMS(512,int(512/self.level),radix=self.level)
-                    self.att_ss4=SAMS(1024,int(1024/self.level),radix=self.level)
-                    self.att_ss5=SAMS(2048,int(2048/self.level),radix=self.level)
+                    self.att_ss1 = SAMS(64, int(64 / self.level), radix=self.level)
+                    self.att_ss2 = SAMS(256, int(256 / self.level), radix=self.level)
+                    self.att_ss3 = SAMS(512, int(512 / self.level), radix=self.level)
+                    self.att_ss4 = SAMS(1024, int(1024 / self.level), radix=self.level)
+                    self.att_ss5 = SAMS(2048, int(2048 / self.level), radix=self.level)
                     self.BN_1 = BN2d(64)
                     self.BN_2 = BN2d(256)
                     self.BN_3 = BN2d(512)
                     self.BN_4 = BN2d(1024)
                     self.BN_5 = BN2d(2048)
                     if self.level > 3:
-                        raise RuntimeError("We do not support pyramid level greater than three.")
+                        raise RuntimeError(
+                            "We do not support pyramid level greater than three."
+                        )
 
         self.gap = nn.AdaptiveAvgPool2d(1)
         self.num_classes = num_classes
@@ -165,11 +172,9 @@ class Baseline(nn.Module):
         self.classifier = nn.Linear(self.in_planes, self.num_classes, bias=False)
         self.classifier.apply(weights_init_classifier)
 
-
     def forward(self, x):
 
-
-        #pdb.set_trace()
+        # pdb.set_trace()
         x = self.base_1(x)
         if self.level > 2:
             x = self.att_ss1(x)
@@ -179,8 +184,7 @@ class Baseline(nn.Module):
             x = self.BN1(x)
         if self.level > 0:
             y = self.att1(x)
-            x=x*y.expand_as(x)
-
+            x = x * y.expand_as(x)
 
         x = self.base_2(x)
         if self.level > 2:
@@ -191,8 +195,7 @@ class Baseline(nn.Module):
             x = self.BN2(x)
         if self.level > 0:
             y = self.att2(x)
-            x=x*y.expand_as(x)
-
+            x = x * y.expand_as(x)
 
         x = self.base_3(x)
         if self.level > 2:
@@ -203,7 +206,7 @@ class Baseline(nn.Module):
             x = self.BN3(x)
         if self.level > 0:
             y = self.att3(x)
-            x=x*y.expand_as(x)
+            x = x * y.expand_as(x)
 
         x = self.base_4(x)
         if self.level > 2:
@@ -214,8 +217,7 @@ class Baseline(nn.Module):
             x = self.BN4(x)
         if self.level > 0:
             y = self.att4(x)
-            x=x*y.expand_as(x)
-
+            x = x * y.expand_as(x)
 
         x = self.base_5(x)
         if self.level > 2:
@@ -226,11 +228,12 @@ class Baseline(nn.Module):
             x = self.BN5(x)
         if self.level > 0:
             y = self.att5(x)
-            x=x*y.expand_as(x)
-
+            x = x * y.expand_as(x)
 
         global_feat = self.gap(x)  # (b, 2048, 1, 1)
-        global_feat = global_feat.view(global_feat.shape[0], -1)  # flatten to (bs, 2048)
+        global_feat = global_feat.view(
+            global_feat.shape[0], -1
+        )  # flatten to (bs, 2048)
 
         feat = self.bottleneck(global_feat)  # normalize for angular softmax
 

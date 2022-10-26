@@ -1,14 +1,17 @@
 import math
+
 import torch
 import torch.nn as nn
 import torch.utils.model_zoo as model_zoo
 from torchvision.models import ResNet
+
 from .se_module import SELayer
 
 
-
 def conv3x3(in_planes, out_planes, stride=1):
-    return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride, padding=1, bias=False)
+    return nn.Conv2d(
+        in_planes, out_planes, kernel_size=3, stride=stride, padding=1, bias=False
+    )
 
 
 class SEBasicBlock(nn.Module):
@@ -51,8 +54,9 @@ class SEBottleneck(nn.Module):
         super(SEBottleneck, self).__init__()
         self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=1, bias=False)
         self.bn1 = nn.BatchNorm2d(planes)
-        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride,
-                               padding=1, bias=False)
+        self.conv2 = nn.Conv2d(
+            planes, planes, kernel_size=3, stride=stride, padding=1, bias=False
+        )
         self.bn2 = nn.BatchNorm2d(planes)
         self.conv3 = nn.Conv2d(planes, planes * 4, kernel_size=1, bias=False)
         self.bn3 = nn.BatchNorm2d(planes * 4)
@@ -84,27 +88,31 @@ class SEBottleneck(nn.Module):
 
         return out
 
+
 class SEResNet(nn.Module):
     def __init__(self, last_stride=2, block=SEBottleneck, layers=[3, 4, 6, 3]):
         self.inplanes = 64
         super().__init__()
-        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3,
-                               bias=False)
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)
         self.bn1 = nn.BatchNorm2d(64)
-        #self.relu = nn.ReLU(inplace=True)
+        # self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
         self.layer1 = self._make_layer(block, 64, layers[0])
         self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
         self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
-        self.layer4 = self._make_layer(
-            block, 512, layers[3], stride=last_stride)
+        self.layer4 = self._make_layer(block, 512, layers[3], stride=last_stride)
 
     def _make_layer(self, block, planes, blocks, stride=1):
         downsample = None
         if stride != 1 or self.inplanes != planes * block.expansion:
             downsample = nn.Sequential(
-                nn.Conv2d(self.inplanes, planes * block.expansion,
-                          kernel_size=1, stride=stride, bias=False),
+                nn.Conv2d(
+                    self.inplanes,
+                    planes * block.expansion,
+                    kernel_size=1,
+                    stride=stride,
+                    bias=False,
+                ),
                 nn.BatchNorm2d(planes * block.expansion),
             )
 
@@ -119,7 +127,7 @@ class SEResNet(nn.Module):
     def forward(self, x):
         x = self.conv1(x)
         x = self.bn1(x)
-        #x = self.relu(x)
+        # x = self.relu(x)
         x = self.maxpool(x)
 
         x = self.layer1(x)
@@ -132,7 +140,7 @@ class SEResNet(nn.Module):
     def load_param(self, model_path):
         param_dict = torch.load(model_path)
         for i in param_dict:
-            if 'fc' in i:
+            if "fc" in i:
                 continue
             self.state_dict()[i].copy_(param_dict[i])
 
@@ -140,13 +148,10 @@ class SEResNet(nn.Module):
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
-                m.weight.data.normal_(0, math.sqrt(2. / n))
+                m.weight.data.normal_(0, math.sqrt(2.0 / n))
             elif isinstance(m, nn.BatchNorm2d):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
-
-
-
 
 
 def se_resnet18(num_classes=1_000):
@@ -180,7 +185,11 @@ def se_resnet50(num_classes=1_000, pretrained=False):
     model = ResNet(SEBottleneck, [3, 4, 6, 3], num_classes=num_classes)
     model.avgpool = nn.AdaptiveAvgPool2d(1)
     if pretrained:
-        model.load_state_dict(model_zoo.load_url("https://www.dropbox.com/s/xpq8ne7rwa4kg4c/seresnet50-60a8950a85b2b.pkl"))
+        model.load_state_dict(
+            model_zoo.load_url(
+                "https://www.dropbox.com/s/xpq8ne7rwa4kg4c/seresnet50-60a8950a85b2b.pkl"
+            )
+        )
     return model
 
 
@@ -216,8 +225,10 @@ class CifarSEBasicBlock(nn.Module):
         self.bn2 = nn.BatchNorm2d(planes)
         self.se = SELayer(planes, reduction)
         if inplanes != planes:
-            self.downsample = nn.Sequential(nn.Conv2d(inplanes, planes, kernel_size=1, stride=stride, bias=False),
-                                            nn.BatchNorm2d(planes))
+            self.downsample = nn.Sequential(
+                nn.Conv2d(inplanes, planes, kernel_size=1, stride=stride, bias=False),
+                nn.BatchNorm2d(planes),
+            )
         else:
             self.downsample = lambda x: x
         self.stride = stride
@@ -242,12 +253,20 @@ class CifarSEResNet(nn.Module):
     def __init__(self, block, n_size, num_classes=10, reduction=16):
         super(CifarSEResNet, self).__init__()
         self.inplane = 16
-        self.conv1 = nn.Conv2d(3, self.inplane, kernel_size=3, stride=1, padding=1, bias=False)
+        self.conv1 = nn.Conv2d(
+            3, self.inplane, kernel_size=3, stride=1, padding=1, bias=False
+        )
         self.bn1 = nn.BatchNorm2d(self.inplane)
         self.relu = nn.ReLU(inplace=True)
-        self.layer1 = self._make_layer(block, 16, blocks=n_size, stride=1, reduction=reduction)
-        self.layer2 = self._make_layer(block, 32, blocks=n_size, stride=2, reduction=reduction)
-        self.layer3 = self._make_layer(block, 64, blocks=n_size, stride=2, reduction=reduction)
+        self.layer1 = self._make_layer(
+            block, 16, blocks=n_size, stride=1, reduction=reduction
+        )
+        self.layer2 = self._make_layer(
+            block, 32, blocks=n_size, stride=2, reduction=reduction
+        )
+        self.layer3 = self._make_layer(
+            block, 64, blocks=n_size, stride=2, reduction=reduction
+        )
         self.avgpool = nn.AdaptiveAvgPool2d(1)
         self.fc = nn.Linear(64, num_classes)
         self.initialize()
@@ -306,48 +325,36 @@ class CifarSEPreActResNet(CifarSEResNet):
 
 
 def se_resnet20(**kwargs):
-    """Constructs a ResNet-18 model.
-
-    """
+    """Constructs a ResNet-18 model."""
     model = CifarSEResNet(CifarSEBasicBlock, 3, **kwargs)
     return model
 
 
 def se_resnet32(**kwargs):
-    """Constructs a ResNet-34 model.
-
-    """
+    """Constructs a ResNet-34 model."""
     model = CifarSEResNet(CifarSEBasicBlock, 5, **kwargs)
     return model
 
 
 def se_resnet56(**kwargs):
-    """Constructs a ResNet-34 model.
-
-    """
+    """Constructs a ResNet-34 model."""
     model = CifarSEResNet(CifarSEBasicBlock, 9, **kwargs)
     return model
 
 
 def se_preactresnet20(**kwargs):
-    """Constructs a ResNet-18 model.
-
-    """
+    """Constructs a ResNet-18 model."""
     model = CifarSEPreActResNet(CifarSEBasicBlock, 3, **kwargs)
     return model
 
 
 def se_preactresnet32(**kwargs):
-    """Constructs a ResNet-34 model.
-
-    """
+    """Constructs a ResNet-34 model."""
     model = CifarSEPreActResNet(CifarSEBasicBlock, 5, **kwargs)
     return model
 
 
 def se_preactresnet56(**kwargs):
-    """Constructs a ResNet-34 model.
-
-    """
+    """Constructs a ResNet-34 model."""
     model = CifarSEPreActResNet(CifarSEBasicBlock, 9, **kwargs)
     return model

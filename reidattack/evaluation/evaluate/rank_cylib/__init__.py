@@ -1,7 +1,8 @@
 # Code imported from https://github.com/JDAI-CV/fast-reid/blob/master/fastreid/evaluation/rank_cylib/__init__.py
-from .rank_cy import evaluate_reid_cy
 # from .roc_cy import evaluate_roc_cy
 import ignite
+
+from .rank_cy import evaluate_reid_cy
 
 
 @ignite.distributed.utils.one_rank_only()

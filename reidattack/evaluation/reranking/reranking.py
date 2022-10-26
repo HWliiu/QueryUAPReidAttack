@@ -6,10 +6,12 @@
 # """
 # Save memory version
 
+import gc
+import time
+
 import numpy as np
 import torch
-import time
-import gc
+
 # from tqdm import tqdm
 
 
@@ -18,8 +20,10 @@ def euclidean_distance(qf, gf):
     m = qf.shape[0]
     n = gf.shape[0]
 
-    dist_mat = torch.pow(qf, 2).sum(dim=1, keepdim=True).expand(m, n) +\
-        torch.pow(gf, 2).sum(dim=1, keepdim=True).expand(n, m).t()
+    dist_mat = (
+        torch.pow(qf, 2).sum(dim=1, keepdim=True).expand(m, n)
+        + torch.pow(gf, 2).sum(dim=1, keepdim=True).expand(n, m).t()
+    )
     dist_mat.addmm_(qf, gf.t(), beta=1, alpha=-2)
 
     # for L2-norm feature
@@ -33,10 +37,10 @@ def batch_euclidean_distance(qf, gf, N=6000):
 
     dist_mat = []
     for j in range(n // N + 1):
-        temp_gf = gf[j * N:j * N + N]
+        temp_gf = gf[j * N : j * N + N]
         temp_qd = []
         for i in range(m // N + 1):
-            temp_qf = qf[i * N:i * N + N]
+            temp_qf = qf[i * N : i * N + N]
             temp_d = euclidean_distance(temp_qf, temp_gf)
             temp_qd.append(temp_d)
         temp_qd = torch.cat(temp_qd, dim=0)
@@ -60,18 +64,18 @@ def batch_torch_topk(qf, gf, k1, N=6000):
     dist_mat = []
     initial_rank = []
     for j in range(n // N + 1):
-        temp_gf = gf[j * N:j * N + N]
+        temp_gf = gf[j * N : j * N + N]
         temp_qd = []
         for i in range(m // N + 1):
-            temp_qf = qf[i * N:i * N + N]
+            temp_qf = qf[i * N : i * N + N]
             temp_d = euclidean_distance(temp_qf, temp_gf)
             temp_qd.append(temp_d)
         temp_qd = torch.cat(temp_qd, dim=0)
         temp_qd = temp_qd / (torch.max(temp_qd, dim=0)[0])
         temp_qd = temp_qd.t()
         initial_rank.append(
-            torch.topk(
-                temp_qd, k=k1, dim=1, largest=False, sorted=True)[1])
+            torch.topk(temp_qd, k=k1, dim=1, largest=False, sorted=True)[1]
+        )
 
     del temp_qd
     del temp_gf
@@ -99,8 +103,8 @@ def batch_v(feat, R, all_num):
 
 
 def k_reciprocal_neigh(initial_rank, i, k1):
-    forward_k_neigh_index = initial_rank[i, :k1 + 1]
-    backward_k_neigh_index = initial_rank[forward_k_neigh_index, :k1 + 1]
+    forward_k_neigh_index = initial_rank[i, : k1 + 1]
+    backward_k_neigh_index = initial_rank[forward_k_neigh_index, : k1 + 1]
     fi = np.where(backward_k_neigh_index == i)[0]
     return forward_k_neigh_index[fi]
 
@@ -141,11 +145,14 @@ def re_ranking(probFea, galFea, k1, k2, lambda_value):
         for j in range(len(k_reciprocal_index)):
             candidate = k_reciprocal_index[j]
             candidate_k_reciprocal_index = k_reciprocal_neigh(
-                initial_rank, candidate, int(np.around(k1 / 2)))
-            if len(np.intersect1d(candidate_k_reciprocal_index, k_reciprocal_index)) > 2. / 3 * len(
-                    candidate_k_reciprocal_index):
+                initial_rank, candidate, int(np.around(k1 / 2))
+            )
+            if len(
+                np.intersect1d(candidate_k_reciprocal_index, k_reciprocal_index)
+            ) > 2.0 / 3 * len(candidate_k_reciprocal_index):
                 k_reciprocal_expansion_index = np.append(
-                    k_reciprocal_expansion_index, candidate_k_reciprocal_index)
+                    k_reciprocal_expansion_index, candidate_k_reciprocal_index
+                )
         k_reciprocal_expansion_index = np.unique(k_reciprocal_expansion_index)
         R.append(k_reciprocal_expansion_index)
 
@@ -169,7 +176,7 @@ def re_ranking(probFea, galFea, k1, k2, lambda_value):
 
     # 下面这个版本更省内存(约40%)，但是更慢
     # Low-memory version
-    '''gc.collect()  # empty memory
+    """gc.collect()  # empty memory
     N = 2000
     for j in range(all_num // N + 1):
         if k2 != 1:
@@ -178,7 +185,7 @@ def re_ranking(probFea, galFea, k1, k2, lambda_value):
                 V_qe[i, :] = np.mean(V[initial_rank[i], j * N:j * N + N], axis=0)
             V[:, j * N:j * N + N] = V_qe
             del V_qe
-    del initial_rank'''
+    del initial_rank"""
 
     # gc.collect()  # empty memory
     # print('Using totally {:.2f}S to compute V-2'.format(time.time() - t1))
@@ -194,14 +201,14 @@ def re_ranking(probFea, galFea, k1, k2, lambda_value):
         indNonZero = np.where(V[i, :] != 0)[0]
         indImages = [invIndex[ind] for ind in indNonZero]
         for j in range(len(indNonZero)):
-            temp_min[0, indImages[j]] = temp_min[0, indImages[j]
-                                                 ] + np.minimum(V[i, indNonZero[j]], V[indImages[j], indNonZero[j]])
-        jaccard_dist[i] = 1 - temp_min / (2. - temp_min)
+            temp_min[0, indImages[j]] = temp_min[0, indImages[j]] + np.minimum(
+                V[i, indNonZero[j]], V[indImages[j], indNonZero[j]]
+            )
+        jaccard_dist[i] = 1 - temp_min / (2.0 - temp_min)
     del V
     # gc.collect()  # empty memory
     original_dist = batch_euclidean_distance(feat, feat[:query_num, :]).numpy()
-    final_dist = jaccard_dist * (
-        1 - lambda_value) + original_dist * lambda_value
+    final_dist = jaccard_dist * (1 - lambda_value) + original_dist * lambda_value
     # print(jaccard_dist)
     del original_dist
 

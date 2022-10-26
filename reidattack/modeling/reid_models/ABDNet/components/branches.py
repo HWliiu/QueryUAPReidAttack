@@ -1,11 +1,12 @@
 import weakref
+from collections import defaultdict
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from collections import defaultdict
 
 from .attention import get_attention_module_instance
+
 
 def init_params(x):
 
@@ -14,7 +15,7 @@ def init_params(x):
 
     for m in x.modules():
         if isinstance(m, nn.Conv2d):
-            nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+            nn.init.kaiming_normal_(m.weight, mode="fan_out", nonlinearity="relu")
             if m.bias is not None:
                 nn.init.constant_(m.bias, 0)
         elif isinstance(m, nn.BatchNorm2d):
@@ -28,8 +29,8 @@ def init_params(x):
             if m.bias is not None:
                 nn.init.constant_(m.bias, 0)
 
-class MultiBranchNetwork(nn.Module):
 
+class MultiBranchNetwork(nn.Module):
     def __init__(self, backbone, args, num_classes, **kwargs):
         super().__init__()
 
@@ -48,58 +49,50 @@ class MultiBranchNetwork(nn.Module):
 
         # stupid bug! the order of the branch_names was uncertain
         # branch_names = frozenset(args['branches'])
-        branch_names = args['branches']
+        branch_names = args["branches"]
         branch_list = []
 
         for branch_name in branch_names:
 
-            if 'global' == branch_name:
+            if "global" == branch_name:
 
-                middle_subbranch = self._get_middle_subbranch_for(backbone, args, GlobalBranch)
-                global_branch = GlobalBranch(self, backbone, args, middle_subbranch.out_dim)
-
-                branch_list.append(
-                    Sequential(
-                        middle_subbranch,
-                        global_branch
-                    )
+                middle_subbranch = self._get_middle_subbranch_for(
+                    backbone, args, GlobalBranch
+                )
+                global_branch = GlobalBranch(
+                    self, backbone, args, middle_subbranch.out_dim
                 )
 
-            if 'abd' == branch_name:
-                middle_subbranch = self._get_middle_subbranch_for(backbone, args, ABDBranch)
+                branch_list.append(Sequential(middle_subbranch, global_branch))
+
+            if "abd" == branch_name:
+                middle_subbranch = self._get_middle_subbranch_for(
+                    backbone, args, ABDBranch
+                )
                 abd_branch = ABDBranch(self, backbone, args, middle_subbranch.out_dim)
-                branch_list.append(
-                    Sequential(
-                        middle_subbranch,
-                        abd_branch
-                    )
-                )
+                branch_list.append(Sequential(middle_subbranch, abd_branch))
 
-            if branch_name.startswith('np'):
-                middle_subbranch = self._get_middle_subbranch_for(backbone, args, NPBranch)
+            if branch_name.startswith("np"):
+                middle_subbranch = self._get_middle_subbranch_for(
+                    backbone, args, NPBranch
+                )
                 try:
                     part_num = int(branch_name[2:])
                 except (TypeError, ValueError):
                     part_num = None
-                np_branch = NPBranch(self, backbone, args, middle_subbranch.out_dim, part_num=part_num)
-                branch_list.append(
-                    Sequential(
-                        middle_subbranch,
-                        np_branch
-                    )
+                np_branch = NPBranch(
+                    self, backbone, args, middle_subbranch.out_dim, part_num=part_num
                 )
+                branch_list.append(Sequential(middle_subbranch, np_branch))
 
-            if 'dan' == branch_name:
-                middle_subbranch = self._get_middle_subbranch_for(backbone, args, DANBranch)
+            if "dan" == branch_name:
+                middle_subbranch = self._get_middle_subbranch_for(
+                    backbone, args, DANBranch
+                )
                 dan_branch = DANBranch(self, backbone, args, middle_subbranch.out_dim)
-                branch_list.append(
-                    Sequential(
-                        middle_subbranch,
-                        dan_branch
-                    )
-                )
+                branch_list.append(Sequential(middle_subbranch, dan_branch))
 
-        assert len(branch_list) != 0, 'Should specify at least one branch.'
+        assert len(branch_list) != 0, "Should specify at least one branch."
         return branch_list
 
     def backbone_modules(self):
@@ -114,7 +107,7 @@ class MultiBranchNetwork(nn.Module):
         x, *intermediate_fmaps = self.common_branch(x)
 
         fmap_dict = defaultdict(list)
-        fmap_dict['intermediate'].extend(intermediate_fmaps)
+        fmap_dict["intermediate"].extend(intermediate_fmaps)
 
         predict_features, xent_features, triplet_features = [], [], []
 
@@ -132,12 +125,15 @@ class MultiBranchNetwork(nn.Module):
         if not self.training:
             return torch.cat(predict_features, 1)
 
-        return torch.cat(predict_features, 1), tuple(xent_features),\
-            tuple(triplet_features), fmap_dict
+        return (
+            torch.cat(predict_features, 1),
+            tuple(xent_features),
+            tuple(triplet_features),
+            fmap_dict,
+        )
 
 
 class Sequential(nn.Sequential):
-
     def backbone_modules(self):
 
         backbone_modules = []
@@ -148,19 +144,18 @@ class Sequential(nn.Sequential):
 
 
 class GlobalBranch(nn.Module):
-
     def __init__(self, owner, backbone, args, input_dim):
         super().__init__()
 
         self.owner = weakref.ref(owner)
 
         self.input_dim = input_dim
-        self.output_dim = args['global_dim']
+        self.output_dim = args["global_dim"]
         self.args = args
         self.num_classes = owner.num_classes
 
         self._init_fc_layer()
-        if args['global_max_pooling']:
+        if args["global_max_pooling"]:
             self.avgpool = nn.AdaptiveMaxPool2d(1)
         else:
             self.avgpool = nn.AdaptiveAvgPool2d(1)
@@ -179,7 +174,7 @@ class GlobalBranch(nn.Module):
 
     def _init_fc_layer(self):
 
-        dropout_p = self.args['dropout']
+        dropout_p = self.args["dropout"]
 
         if dropout_p is not None:
             dropout_layer = [nn.Dropout(p=dropout_p)]
@@ -211,30 +206,32 @@ class GlobalBranch(nn.Module):
 
         return predict, xent, triplet, {}
 
-class NPBranch(nn.Module):
 
+class NPBranch(nn.Module):
     def __init__(self, owner, backbone, args, input_dim, part_num=None):
         super().__init__()
 
         self.owner = weakref.ref(owner)
 
         self.input_dim = input_dim
-        self.output_dim = args['np_dim']
+        self.output_dim = args["np_dim"]
         self.args = args
         self.num_classes = owner.num_classes
-        self.with_global = args['np_with_global']
+        self.with_global = args["np_with_global"]
         if part_num is None:
-            part_num = args['np_np']
+            part_num = args["np_np"]
         self.part_num = subbranch_num = part_num
         if self.with_global:
             subbranch_num += 1
 
         self.fcs = nn.ModuleList([self._init_fc_layer() for i in range(subbranch_num)])
-        if args['np_max_pooling']:
+        if args["np_max_pooling"]:
             self.avgpool = nn.AdaptiveMaxPool2d(1)
         else:
             self.avgpool = nn.AdaptiveAvgPool2d(1)
-        self.classifiers = nn.ModuleList([self._init_classifier() for i in range(subbranch_num)])
+        self.classifiers = nn.ModuleList(
+            [self._init_classifier() for i in range(subbranch_num)]
+        )
 
     def backbone_modules(self):
 
@@ -249,7 +246,7 @@ class NPBranch(nn.Module):
 
     def _init_fc_layer(self):
 
-        dropout_p = self.args['dropout']
+        dropout_p = self.args["dropout"]
 
         if dropout_p is not None:
             dropout_layer = [nn.Dropout(p=dropout_p)]
@@ -270,12 +267,15 @@ class NPBranch(nn.Module):
 
         triplet, xent, predict = [], [], []
 
-        assert x.size(2) % self.part_num == 0,\
-            "Height {} is not a multiplication of {}. Aborted.".format(x.size(2), self.part_num)
+        assert (
+            x.size(2) % self.part_num == 0
+        ), "Height {} is not a multiplication of {}. Aborted.".format(
+            x.size(2), self.part_num
+        )
         margin = x.size(2) // self.part_num
 
         for p in range(self.part_num):
-            x_sliced = self.avgpool(x[:, :, p * margin:(p + 1) * margin, :])
+            x_sliced = self.avgpool(x[:, :, p * margin : (p + 1) * margin, :])
             x_sliced = x_sliced.view(x_sliced.size(0), -1)
 
             x_sliced = self.fcs[p](x_sliced)
@@ -298,16 +298,15 @@ class NPBranch(nn.Module):
 
 
 class ABDBranch(nn.Module):
-
     def __init__(self, owner, backbone, args, input_dim):
         super().__init__()
 
         self.owner = weakref.ref(owner)
 
         self.input_dim = input_dim
-        self.output_dim = args['abd_dim']
+        self.output_dim = args["abd_dim"]
         self.args = args
-        self.part_num = args['abd_np']
+        self.part_num = args["abd_np"]
         self.num_classes = owner.num_classes
 
         self._init_reduction_layer()
@@ -335,7 +334,7 @@ class ABDBranch(nn.Module):
         reduction = nn.Sequential(
             nn.Conv2d(self.input_dim, self.output_dim, kernel_size=1, bias=False),
             nn.BatchNorm2d(self.output_dim),
-            nn.ReLU(inplace=True)
+            nn.ReLU(inplace=True),
         )
         init_params(reduction)
 
@@ -345,43 +344,37 @@ class ABDBranch(nn.Module):
 
         args = self.args
         self.dan_module_names = set()
-        DAN_module_names = {'cam', 'pam'} & set(args['abd_dan'])
-        use_head = not args['abd_dan_no_head']
+        DAN_module_names = {"cam", "pam"} & set(args["abd_dan"])
+        use_head = not args["abd_dan_no_head"]
         self.use_dan = bool(DAN_module_names)
 
         before_module = get_attention_module_instance(
-            'identity',
-            self.output_dim,
-            use_head=use_head
+            "identity", self.output_dim, use_head=use_head
         )
-        self.dan_module_names.add('before_module')
+        self.dan_module_names.add("before_module")
         self.before_module = before_module
         if use_head:
             init_params(before_module)
 
-        if 'cam' in DAN_module_names:
+        if "cam" in DAN_module_names:
             cam_module = get_attention_module_instance(
-                'cam',
-                self.output_dim,
-                use_head=use_head
+                "cam", self.output_dim, use_head=use_head
             )
             init_params(cam_module)
-            self.dan_module_names.add('cam_module')
+            self.dan_module_names.add("cam_module")
             self.cam_module = cam_module
 
-        if 'pam' in DAN_module_names:
+        if "pam" in DAN_module_names:
             pam_module = get_attention_module_instance(
-                'pam',
-                self.output_dim,
-                use_head=use_head
+                "pam", self.output_dim, use_head=use_head
             )
             init_params(pam_module)
-            self.dan_module_names.add('pam_module')
+            self.dan_module_names.add("pam_module")
             self.pam_module = pam_module
 
         sum_conv = nn.Sequential(
             nn.Dropout2d(0.1, False),
-            nn.Conv2d(self.output_dim, self.output_dim, kernel_size=1)
+            nn.Conv2d(self.output_dim, self.output_dim, kernel_size=1),
         )
         init_params(sum_conv)
         self.sum_conv = sum_conv
@@ -393,12 +386,15 @@ class ABDBranch(nn.Module):
 
         x = self.reduction(x)
 
-        assert x.size(2) % self.part_num == 0,\
-            "Height {} is not a multiplication of {}. Aborted.".format(x.size(2), self.part_num)
+        assert (
+            x.size(2) % self.part_num == 0
+        ), "Height {} is not a multiplication of {}. Aborted.".format(
+            x.size(2), self.part_num
+        )
 
         margin = x.size(2) // self.part_num
         for p in range(self.part_num):
-            x_sliced = x[:, :, margin * p:margin * (p + 1), :]
+            x_sliced = x[:, :, margin * p : margin * (p + 1), :]
 
             if self.use_dan:
                 to_sum = []
@@ -406,16 +402,16 @@ class ABDBranch(nn.Module):
                 for module_name in self.dan_module_names:
                     x_out = getattr(self, module_name)(x_sliced)
                     to_sum.append(x_out)
-                    fmap[module_name.partition('_')[0]].append(x_out)
+                    fmap[module_name.partition("_")[0]].append(x_out)
 
                 fmap_after = self.sum_conv(sum(to_sum))
-                fmap['after'].append(fmap_after)
+                fmap["after"].append(fmap_after)
 
             else:
 
                 fmap_after = x_sliced
-                fmap['before'].append(fmap_after)
-                fmap['after'].append(fmap_after)
+                fmap["before"].append(fmap_after)
+                fmap["after"].append(fmap_after)
 
             v = self.avgpool(fmap_after)
             v = v.view(v.size(0), -1)
@@ -428,14 +424,13 @@ class ABDBranch(nn.Module):
 
 
 class DANBranch(nn.Module):
-
     def __init__(self, owner, backbone, args, input_dim):
         super().__init__()
 
         self.owner = weakref.ref(owner)
 
         self.input_dim = input_dim
-        self.output_dim = args['dan_dim']
+        self.output_dim = args["dan_dim"]
         self.args = args
         self.num_classes = owner.num_classes
 
@@ -451,7 +446,9 @@ class DANBranch(nn.Module):
 
     def _init_classifier(self):
 
-        classifier = nn.Linear(len(self.dan_module_names) * self.output_dim, self.owner().num_classes)
+        classifier = nn.Linear(
+            len(self.dan_module_names) * self.output_dim, self.owner().num_classes
+        )
         init_params(classifier)
         self.classifier = classifier
 
@@ -459,41 +456,32 @@ class DANBranch(nn.Module):
 
         args = self.args
         self.dan_module_names = set()
-        DAN_module_names = {'cam', 'pam'} & set(args['dan_dan'])
-        use_head = not args['dan_dan_no_head']
+        DAN_module_names = {"cam", "pam"} & set(args["dan_dan"])
+        use_head = not args["dan_dan_no_head"]
         self.use_dan = bool(DAN_module_names)
 
         before_module = get_attention_module_instance(
-            'identity',
-            self.output_dim,
-            use_head=False
+            "identity", self.output_dim, use_head=False
         )
-        self.dan_module_names.add('before_module')
+        self.dan_module_names.add("before_module")
         self.before_module = before_module
         if use_head:
             init_params(before_module)
 
-        if 'cam' in DAN_module_names:
+        if "cam" in DAN_module_names:
             cam_module = get_attention_module_instance(
-                'cam',
-                self.input_dim,
-                out_dim=self.output_dim,
-                use_head=use_head
+                "cam", self.input_dim, out_dim=self.output_dim, use_head=use_head
             )
             init_params(cam_module)
-            self.dan_module_names.add('cam_module')
+            self.dan_module_names.add("cam_module")
             self.cam_module = cam_module
 
-        if 'pam' in DAN_module_names:
+        if "pam" in DAN_module_names:
             pam_module = get_attention_module_instance(
-                'pam',
-                self.input_dim,
-                out_dim=self.output_dim,
-
-                use_head=use_head
+                "pam", self.input_dim, out_dim=self.output_dim, use_head=use_head
             )
             init_params(pam_module)
-            self.dan_module_names.add('pam_module')
+            self.dan_module_names.add("pam_module")
             self.pam_module = pam_module
 
     def forward(self, x):

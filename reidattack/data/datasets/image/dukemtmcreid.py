@@ -1,10 +1,10 @@
 # Code imported from https://github.com/KaiyangZhou/deep-person-reid/blob/master/torchreid/data/datasets/image/dukemtmcreid.py
-import re
 import glob
 import os.path as osp
+import re
 
-from ..bases import ReidImageDataset
 from .. import IMAGE_DATASET_REGISTRY
+from ..bases import ReidImageDataset
 
 
 @IMAGE_DATASET_REGISTRY.register()
@@ -22,23 +22,23 @@ class DukeMTMCreID(ReidImageDataset):
         - images:16522 (train) + 2228 (query) + 17661 (gallery).
         - cameras: 8.
     """
-    dataset_dir = 'dukemtmc-reid'
-    dataset_url = 'http://vision.cs.duke.edu/DukeMTMC/data/misc/DukeMTMC-reID.zip'
 
-    def __init__(self, root='', **kwargs):
+    dataset_dir = "dukemtmc-reid"
+    dataset_url = "http://vision.cs.duke.edu/DukeMTMC/data/misc/DukeMTMC-reID.zip"
+
+    def __init__(self, root="", **kwargs):
         self.root = osp.abspath(osp.expanduser(root))
         self.dataset_dir = osp.join(self.root, self.dataset_dir)
         self.download_dataset(self.dataset_dir, self.dataset_url)
-        self.train_dir = osp.join(
-            self.dataset_dir, 'bounding_box_train'
-        )
-        self.query_dir = osp.join(self.dataset_dir, 'query')
-        self.gallery_dir = osp.join(
-            self.dataset_dir, 'bounding_box_test'
-        )
+        self.train_dir = osp.join(self.dataset_dir, "bounding_box_train")
+        self.query_dir = osp.join(self.dataset_dir, "query")
+        self.gallery_dir = osp.join(self.dataset_dir, "bounding_box_test")
 
         required_files = [
-            self.dataset_dir, self.train_dir, self.query_dir, self.gallery_dir
+            self.dataset_dir,
+            self.train_dir,
+            self.query_dir,
+            self.gallery_dir,
         ]
         self.check_before_run(required_files)
 
@@ -49,8 +49,8 @@ class DukeMTMCreID(ReidImageDataset):
         super(DukeMTMCreID, self).__init__(train, query, gallery, **kwargs)
 
     def process_dir(self, dir_path, relabel=False):
-        img_paths = glob.glob(osp.join(dir_path, '*.jpg'))
-        pattern = re.compile(r'([-\d]+)_c(\d)')
+        img_paths = glob.glob(osp.join(dir_path, "*.jpg"))
+        pattern = re.compile(r"([-\d]+)_c(\d)")
 
         pid_container = set()
         for img_path in img_paths:

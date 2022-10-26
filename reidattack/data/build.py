@@ -1,6 +1,6 @@
-from collections import defaultdict
 import logging
 import random
+from collections import defaultdict
 
 import torch
 from torch.utils.data import DataLoader
@@ -33,21 +33,23 @@ def _random_choose(train_set, num_id, num_img):
     return new_train
 
 
-def build_train_dataloader(data_cfg, mode='train', **kwargs):
+def build_train_dataloader(data_cfg, mode="train", **kwargs):
     """Build a dataloader for object re-identification with some default features.
 
     Returns:
         torch.utils.data.DataLoader: a dataloader.
     """
-    logger = logging.getLogger(
-        'reidattack.' + build_train_dataloader.__qualname__)
+    logger = logging.getLogger("reidattack." + build_train_dataloader.__qualname__)
 
     # build dataset
     transforms = build_transforms(data_cfg.TRANSFORM, is_train=True)
 
     dataset_cfg = data_cfg.DATASET
-    DATASET_REGISTRY = IMAGE_DATASET_REGISTRY \
-        if dataset_cfg.TYPE == 'image' else VIDEO_DATASET_REGISTRY
+    DATASET_REGISTRY = (
+        IMAGE_DATASET_REGISTRY
+        if dataset_cfg.TYPE == "image"
+        else VIDEO_DATASET_REGISTRY
+    )
 
     train_sets = list()
     for name in dataset_cfg.TRAIN_NAMES:
@@ -55,11 +57,12 @@ def build_train_dataloader(data_cfg, mode='train', **kwargs):
             root=dataset_cfg.ROOT_DIR,
             mode=mode,
             transform=transforms,
-            combineall=dataset_cfg.COMBINEALL)
+            combineall=dataset_cfg.COMBINEALL,
+        )
 
         logger.info(train_set.show_train())
         train_sets.append(train_set)
-    assert len(train_sets) > 0, 'No training set found'
+    assert len(train_sets) > 0, "No training set found"
     if len(train_sets) > 1:
         train_set = sum(train_sets)
 
@@ -69,23 +72,28 @@ def build_train_dataloader(data_cfg, mode='train', **kwargs):
     sampler_name = dataloader_cfg.SAMPLER_TRAIN
     train_sample_num = dataloader_cfg.SAMPLE_NUM_TRAIN
 
-    if sampler_name == 'RandomIdentitySampler':
+    if sampler_name == "RandomIdentitySampler":
         num_instance = dataloader_cfg.NUM_INSTANCE
-        assert batch_size > num_instance and batch_size % num_instance == 0, \
-            'batch_size must be greater than num_instance and divisible by num_instance'
+        assert (
+            batch_size > num_instance and batch_size % num_instance == 0
+        ), "batch_size must be greater than num_instance and divisible by num_instance"
 
         train_set.data = _random_choose(
-            train_set.data, train_sample_num // num_instance, train_sample_num)
+            train_set.data, train_sample_num // num_instance, train_sample_num
+        )
         sampler = SAMPLER_REGISTRY.get(sampler_name)(
             data_source=train_set.data,
             batch_size=batch_size,
-            num_instances=num_instance)
-    elif sampler_name == 'RandomSampler':
+            num_instances=num_instance,
+        )
+    elif sampler_name == "RandomSampler":
         sampler = SAMPLER_REGISTRY.get(sampler_name)(
-            data_source=train_set, num_samples=train_sample_num)
-    elif sampler_name == 'SequentialSampler':
+            data_source=train_set, num_samples=train_sample_num
+        )
+    elif sampler_name == "SequentialSampler":
         sampler = SAMPLER_REGISTRY.get(sampler_name)(
-            data_source=range(train_sample_num))
+            data_source=range(train_sample_num)
+        )
     else:
         # TODO: add other samplers
         raise NotImplementedError(sampler_name)
@@ -97,7 +105,8 @@ def build_train_dataloader(data_cfg, mode='train', **kwargs):
         num_workers=8,
         drop_last=False,
         pin_memory=True,
-        **kwargs)
+        **kwargs
+    )
 
     return train_loader
 
@@ -106,25 +115,25 @@ def build_test_dataloader(data_cfg, **kwargs):
     """Similar to `build_train_dataloader`. This sampler coordinates all workers to produce
     the exact set of all samples
     """
-    logger = logging.getLogger(
-        'reidattack.' + build_test_dataloader.__qualname__)
+    logger = logging.getLogger("reidattack." + build_test_dataloader.__qualname__)
 
     # build dataset
     transforms = build_transforms(data_cfg.TRANSFORM, is_train=False)
 
     dataset_cfg = data_cfg.DATASET
-    DATASET_REGISTRY = IMAGE_DATASET_REGISTRY \
-        if dataset_cfg.TYPE == 'image' else VIDEO_DATASET_REGISTRY
+    DATASET_REGISTRY = (
+        IMAGE_DATASET_REGISTRY
+        if dataset_cfg.TYPE == "image"
+        else VIDEO_DATASET_REGISTRY
+    )
 
     dataset_name = dataset_cfg.TEST_NAME
     query_set = DATASET_REGISTRY.get(dataset_name)(
-        root=dataset_cfg.ROOT_DIR,
-        mode='query',
-        transform=transforms)
+        root=dataset_cfg.ROOT_DIR, mode="query", transform=transforms
+    )
     gallery_set = DATASET_REGISTRY.get(dataset_name)(
-        root=dataset_cfg.ROOT_DIR,
-        mode='gallery',
-        transform=transforms)
+        root=dataset_cfg.ROOT_DIR, mode="gallery", transform=transforms
+    )
 
     logger.info(query_set.show_test())
 
@@ -138,7 +147,8 @@ def build_test_dataloader(data_cfg, **kwargs):
             num_workers=8,
             shuffle=False,
             drop_last=False,
-            pin_memory=True)
+            pin_memory=True,
+        )
 
     query_loader = build_test_loader(query_set)
     gallery_loader = build_test_loader(gallery_set)

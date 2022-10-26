@@ -1,10 +1,11 @@
-import os
-import sys
-import json
 import errno
+import json
+import os
 import os.path as osp
-import warnings
+import sys
 import time
+import warnings
+
 from PIL import Image
 
 
@@ -35,7 +36,7 @@ def check_isfile(fpath):
 
 def read_json(fpath):
     """Reads json file from a path."""
-    with open(fpath, 'r') as f:
+    with open(fpath, "r") as f:
         obj = json.load(f)
     return obj
 
@@ -43,8 +44,8 @@ def read_json(fpath):
 def write_json(obj, fpath):
     """Writes to a json file."""
     mkdir_if_missing(osp.dirname(fpath))
-    with open(fpath, 'w') as f:
-        json.dump(obj, f, indent=4, separators=(',', ': '))
+    with open(fpath, "w") as f:
+        json.dump(obj, f, indent=4, separators=(",", ": "))
 
 
 def read_image(path):
@@ -61,12 +62,13 @@ def read_image(path):
         raise IOError('"{}" does not exist'.format(path))
     while not got_img:
         try:
-            img = Image.open(path).convert('RGB')
+            img = Image.open(path).convert("RGB")
             got_img = True
         except IOError:
             print(
-                'IOError incurred when reading "{}". Will redo. Don\'t worry. Just chill.'
-                .format(path)
+                'IOError incurred when reading "{}". Will redo. Don\'t worry. Just chill.'.format(
+                    path
+                )
             )
     return img
 
@@ -79,6 +81,7 @@ def download_url(url, dst):
         dst (str): destination path.
     """
     from six.moves import urllib
+
     print('* url="{}"'.format(url))
     print('* destination="{}"'.format(dst))
 
@@ -92,10 +95,10 @@ def download_url(url, dst):
         speed = int(progress_size / (1024 * duration))
         percent = int(count * block_size * 100 / total_size)
         sys.stdout.write(
-            '\r...%d%%, %d MB, %d KB/s, %d seconds passed' %
-            (percent, progress_size / (1024 * 1024), speed, duration)
+            "\r...%d%%, %d MB, %d KB/s, %d seconds passed"
+            % (percent, progress_size / (1024 * 1024), speed, duration)
         )
         sys.stdout.flush()
 
     urllib.request.urlretrieve(url, dst, _reporthook)
-    sys.stdout.write('\n')
+    sys.stdout.write("\n")

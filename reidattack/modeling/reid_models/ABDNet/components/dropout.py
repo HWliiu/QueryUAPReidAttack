@@ -1,10 +1,10 @@
 import os
-from torch.nn import functional as F
+
 from torch import nn
+from torch.nn import functional as F
 
 
 class SimpleDropoutOptimizer(nn.Module):
-
     def __init__(self, p):
 
         super().__init__()
@@ -22,7 +22,6 @@ class SimpleDropoutOptimizer(nn.Module):
 
 
 class DropoutOptimizer(nn.Module):
-
     def __init__(self, args):
 
         super().__init__()
@@ -45,19 +44,19 @@ class DropoutOptimizer(nn.Module):
 
         dropout_settings = self.args.dropout
 
-        if dropout_settings == 'none':
+        if dropout_settings == "none":
             return 0
 
         try:
-            max_dropout = float(os.environ.get('max_dropout'))
+            max_dropout = float(os.environ.get("max_dropout"))
         except (ValueError, TypeError):
             max_dropout = 0.5
 
-        if dropout_settings == 'fix':
+        if dropout_settings == "fix":
             return max_dropout
 
         # print(self.epoch)
-        p = .2 + .1 * (self.epoch // 10)
+        p = 0.2 + 0.1 * (self.epoch // 10)
         p = min(p, max_dropout)
 
         return p
@@ -65,7 +64,7 @@ class DropoutOptimizer(nn.Module):
     def set_p(self, p):
 
         if self.__training:
-            raise RuntimeError('Cannot explicitly set dropout during training')
+            raise RuntimeError("Cannot explicitly set dropout during training")
 
         assert isinstance(p, (int, float))
 
